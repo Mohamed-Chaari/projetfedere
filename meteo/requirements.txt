@@ -1,0 +1,29 @@
+# ──────────────────────────────────────────────────────────────
+#  Météo Tunisie — Python Dependencies
+#  Projet TD5 — ISIMS Sfax
+# ──────────────────────────────────────────────────────────────
+
+# Messaging
+kafka-python==2.0.2
+
+# Database
+psycopg2-binary
+sqlalchemy
+
+# Data processing
+pandas
+scipy
+tabulate
+
+# HTTP / API
+requests
+
+# Orchestration
+apache-airflow==2.8.0
+
+# Configuration
+python-dotenv
+
+# Testing
+pytest
+pytest-cov

@@ -1,0 +1,184 @@
+# ──────────────────────────────────────────────────────────────
+#  Météo Tunisie — Docker Compose Stack
+#  Projet TD5 — ISIMS Sfax
+#
+#  Services:
+#    • Zookeeper  — Kafka coordination
+#    • Kafka      — Event streaming (5 topics, 24 partitions)
+#    • PostgreSQL — TimescaleDB for time-series storage
+#    • Airflow    — DAG orchestration
+#
+#  Usage:
+#    docker-compose up -d
+#    ./scripts/setup_kafka.sh   # create topics
+# ──────────────────────────────────────────────────────────────
+
+version: '3.8'
+
+services:
+
+  # ═══════════════════════════════════════════════════════════
+  #  ZOOKEEPER — Kafka coordination
+  # ═══════════════════════════════════════════════════════════
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: meteo-zookeeper
+    ports:
+      - '2181:2181'
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+    restart: unless-stopped
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - meteo-network
+
+  # ═══════════════════════════════════════════════════════════
+  #  KAFKA — Event streaming engine
+  #  24 partitions (one per governorate), gzip compression
+  # ═══════════════════════════════════════════════════════════
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: meteo-kafka
+    ports:
+      - '9092:9092'
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_NUM_PARTITIONS: 24
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_MESSAGE_MAX_BYTES: 2097152
+      KAFKA_COMPRESSION_TYPE: gzip
+      KAFKA_LOG_RETENTION_HOURS: 72
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_CLEANUP_POLICY: delete
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: kafka-topics --list --bootstrap-server localhost:9092
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - meteo-network
+
+  # ═══════════════════════════════════════════════════════════
+  #  POSTGRESQL — TimescaleDB for time-series weather data
+  #  Tuned for write-heavy meteorological ingestion
+  # ═══════════════════════════════════════════════════════════
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: meteo-postgres
+    ports:
+      - '5432:5432'
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: meteo_db
+      POSTGRES_USER: meteo
+      POSTGRES_PASSWORD: meteo123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command: >
+      postgres
+        -c shared_preload_libraries=timescaledb
+        -c max_connections=200
+        -c work_mem=64MB
+        -c maintenance_work_mem=256MB
+        -c effective_cache_size=1GB
+        -c wal_buffers=16MB
+        -c checkpoint_completion_target=0.9
+        -c random_page_cost=1.1
+        -c log_min_duration_statement=1000
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U meteo -d meteo_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - meteo-network
+
+  # ═══════════════════════════════════════════════════════════
+  #  AIRFLOW — DAG orchestration for scheduled producers
+  # ═══════════════════════════════════════════════════════════
+  airflow:
+    image: apache/airflow:2.8.0
+    container_name: meteo-airflow
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+        postgresql+psycopg2://meteo:meteo123@postgres/meteo_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__CORE__PARALLELISM: 16
+      AIRFLOW__CORE__DAG_CONCURRENCY: 8
+      AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: 2
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+      AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: Africa/Tunis
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin
+    entrypoint: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create --username admin --password admin
+          --firstname Admin --lastname User --role Admin
+          --email admin@meteo.tn || true &&
+        airflow webserver --port 8080 &
+        airflow scheduler
+      "
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./logs:/opt/airflow/logs
+      - ./.env:/opt/airflow/.env
+    networks:
+      - meteo-network
+
+# ═══════════════════════════════════════════════════════════
+#  PERSISTENT VOLUMES
+# ═══════════════════════════════════════════════════════════
+volumes:
+  postgres_data:
+    driver: local
+  kafka_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+
+# ═══════════════════════════════════════════════════════════
+#  NETWORK
+# ═══════════════════════════════════════════════════════════
+networks:
+  meteo-network:
+    driver: bridge
+    name: meteo-network
