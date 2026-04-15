@@ -11,6 +11,19 @@ permissions:
 jobs:
   run-weather-pipeline:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
+      KAFKA_SECURITY_PROTOCOL: SSL
+      KAFKA_CA_FILE: ca.pem
+      KAFKA_CERT_FILE: service.cert
+      KAFKA_KEY_FILE: service.key
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
     defaults:
       run:
         working-directory: meteo
@@ -39,33 +52,9 @@ jobs:
           chmod 600 ca.pem service.cert service.key
 
       - name: Run producer
-        env:
-          KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
-          KAFKA_SECURITY_PROTOCOL: SSL
-          KAFKA_CA_FILE: ca.pem
-          KAFKA_CERT_FILE: service.cert
-          KAFKA_KEY_FILE: service.key
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
         run: |
           python -m src.producer --mode once
 
       - name: Run consumer
-        env:
-          KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
-          KAFKA_SECURITY_PROTOCOL: SSL
-          KAFKA_CA_FILE: ca.pem
-          KAFKA_CERT_FILE: service.cert
-          KAFKA_KEY_FILE: service.key
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
         run: |
           python -m src.consumer --mode batch
