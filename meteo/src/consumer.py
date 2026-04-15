@@ -29,11 +29,12 @@ from kafka import KafkaConsumer, KafkaProducer
 from psycopg2.extras import execute_batch
 
 from src.utils.db import get_connection, close_connection
+from src.utils.kafka_config import get_kafka_connection_config
 
 load_dotenv()
 
 # ── Config ────────────────────────────────────────────────────────
-KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
+KAFKA_BOOTSTRAP, KAFKA_CONN_OPTIONS = get_kafka_connection_config()
 
 BATCH_SIZE            = 200
 BATCH_TIMEOUT_SECONDS = 5.0
@@ -189,6 +190,7 @@ def _get_dlq_producer():
             if _dlq_producer is None:
                 _dlq_producer = KafkaProducer(
                     bootstrap_servers=KAFKA_BOOTSTRAP,
+                    **KAFKA_CONN_OPTIONS,
                     acks="all",
                     retries=3,
                     compression_type="gzip",
@@ -268,6 +270,7 @@ def consume_topic(topic: str, group_id: str, table: str,
     consumer = KafkaConsumer(
         topic,
         bootstrap_servers=KAFKA_BOOTSTRAP,
+        **KAFKA_CONN_OPTIONS,
         group_id=group_id,
         enable_auto_commit=False,
         auto_offset_reset="earliest",
