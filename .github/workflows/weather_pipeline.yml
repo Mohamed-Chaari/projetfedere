@@ -1,0 +1,52 @@
+name: Weather Pipeline
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run-weather-pipeline:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: /home/runner/work/projetfedere/projetfedere/meteo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Recreate Kafka SSL certificate files
+        env:
+          KAFKA_CA_CERT_SECRET: ${{ secrets.KAFKA_CA_CERT_SECRET }}
+          KAFKA_SERVICE_CERT_SECRET: ${{ secrets.KAFKA_SERVICE_CERT_SECRET }}
+          KAFKA_SERVICE_KEY_SECRET: ${{ secrets.KAFKA_SERVICE_KEY_SECRET }}
+        run: |
+          printf "%s" "$KAFKA_CA_CERT_SECRET" > ca.pem
+          printf "%s" "$KAFKA_SERVICE_CERT_SECRET" > service.cert
+          printf "%s" "$KAFKA_SERVICE_KEY_SECRET" > service.key
+
+      - name: Run producer and consumer
+        env:
+          KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
+          KAFKA_SECURITY_PROTOCOL: SSL
+          KAFKA_CA_FILE: ca.pem
+          KAFKA_CERT_FILE: service.cert
+          KAFKA_KEY_FILE: service.key
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+        run: |
+          python -m src.producer --mode once
+          python -m src.consumer --mode batch
