@@ -49,7 +49,8 @@ jobs:
           printf "%s" "$KAFKA_CA_CERT_SECRET" > ca.pem
           printf "%s" "$KAFKA_SERVICE_CERT_SECRET" > service.cert
           printf "%s" "$KAFKA_SERVICE_KEY_SECRET" > service.key
-          chmod 600 ca.pem service.cert service.key
+          chmod 644 ca.pem
+          chmod 600 service.cert service.key
 
       - name: Run producer
         run: |
@@ -62,4 +63,8 @@ jobs:
 
       - name: Clean up SSL certificate files
         if: always()
-        run: rm -f ca.pem service.cert service.key
+        run: |
+          if command -v shred >/dev/null 2>&1; then
+            shred -u service.key service.cert ca.pem || true
+          fi
+          rm -f ca.pem service.cert service.key
