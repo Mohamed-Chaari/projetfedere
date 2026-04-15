@@ -21,7 +21,7 @@ import signal
 import sys
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 
 from dotenv import load_dotenv
@@ -207,7 +207,7 @@ def send_to_dlq(record: dict, error_reason: str, group_id: str):
             "reason":    error_reason,
             "group_id":  group_id,
             "original":  record,
-            "failed_at": datetime.utcnow().isoformat() + "Z",
+            "failed_at": datetime.now(timezone.utc).isoformat() + "Z",
         }
         producer = _get_dlq_producer()
         with _dlq_lock:
@@ -266,7 +266,9 @@ def consume_topic(topic: str, group_id: str, table: str,
         f"(batch_mode={batch_mode})"
     )
 
-    # ── Create Kafka consumer ──
+    # ── Step 1: Initialize the Kafka Consumer connection ──
+    # We ask Kafka to give us up to BATCH_SIZE messages at a time (e.g., 200).
+    # If in `batch_mode`, it will timeout and close if Kafka has been empty for 10 seconds.
     consumer = KafkaConsumer(
         topic,
         bootstrap_servers=KAFKA_BOOTSTRAP,
@@ -280,7 +282,7 @@ def consume_topic(topic: str, group_id: str, table: str,
         key_deserializer=lambda k: k.decode("utf-8") if k else None,
     )
 
-    # ── Create DB connection ──
+    # ── Step 2: Establish connection to Supabase ──
     conn = get_connection()
 
     batch = []
@@ -294,7 +296,9 @@ def consume_topic(topic: str, group_id: str, table: str,
             batch.append(record)
             stats["last_city"] = record.get("city", "?")
 
-            # Flush when batch full OR timeout reached
+            # Step 3: Check if the bucket is full or if time's up
+            # We flush when we hit out BATCH_SIZE limit, OR if BATCH_TIMEOUT_SECONDS has passed.
+            # This prevents 3 lonely messages from getting stuck in memory forever.
             should_flush = (
                 len(batch) >= BATCH_SIZE
                 or (time.time() - last_flush) >= BATCH_TIMEOUT_SECONDS
@@ -319,7 +323,8 @@ def consume_topic(topic: str, group_id: str, table: str,
                         f"last city: {stats['last_city']}"
                     )
 
-                # If DB connection was lost and couldn't reconnect, exit thread
+                # If the database connection dropped, our reconnect logic will try to fix it.
+                # If even that failed, we safely stop this group's thread entirely.
                 if conn is None:
                     logger.critical(
                         f"[{group_id}] DB connection lost permanently — "

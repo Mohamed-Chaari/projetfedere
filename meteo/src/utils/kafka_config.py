@@ -1,12 +1,19 @@
-"""Kafka connection config — Aiven SSL only (cloud-native).
+"""
+=============================================================================
+kafka_config.py — Kafka Connection Configurations
+=============================================================================
 
-All connections require SSL with mutual TLS authentication.
-Required environment variables:
+This module ensures our pipeline securely connects to the Aiven Kafka cloud.
+It strictly enforces SSL connections (mutual TLS) meaning it will actively 
+prevent any attempts to connect via plaintext or older SASL methods.
+
+Required Environment Variables:
+------------------------------
   KAFKA_BOOTSTRAP           — Aiven broker address (host:port)
-  KAFKA_SECURITY_PROTOCOL   — Must be 'SSL'
+  KAFKA_SECURITY_PROTOCOL   — Must be explicitly set to 'SSL'
   KAFKA_CA_FILE             — Path to Aiven CA certificate (ca.pem)
-  KAFKA_CERT_FILE           — Path to client certificate  (service.cert)
-  KAFKA_KEY_FILE            — Path to client private key   (service.key)
+  KAFKA_CERT_FILE           — Path to client certificate (service.cert)
+  KAFKA_KEY_FILE            — Path to client private key (service.key)
 """
 
 from __future__ import annotations

@@ -1,22 +1,29 @@
 """
-db.py — Shared database utilities for the Météo Tunisie pipeline.
+=============================================================================
+db.py — Shared Database Utilities for the Météo Tunisie Pipeline
+=============================================================================
 
-Connects exclusively to Supabase PostgreSQL (cloud-native).
-All connection parameters are loaded from environment variables
-with NO local fallbacks.
+This module is responsible for managing all outgoing connections to our 
+Supabase PostgreSQL cloud database. 
 
-Required environment variables:
-  DB_HOST      — Supabase host  (e.g. db.xxxxx.supabase.co)
-  DB_PORT      — Port           (default: 5432)
-  DB_NAME      — Database name  (default: postgres)
-  DB_USER      — Database user  (default: postgres)
+It handles everything from creating single connections, to managing 
+connection pools for heavy batch ingestion, to providing SQLAlchemy engines 
+for analytical Airflow DAGs.
+
+Important Architecture Note:
+---------------------------
+We connect exclusively to Supabase using their "Session Pooler" endpoint
+(aws-1-eu-central-1.pooler.supabase.com) rather than the direct database URL.
+This acts as an IPv4 proxy, which bypasses the IPv6 limitations on free-tier 
+Supabase clusters and handles connection drops gracefully.
+
+Required Environment Variables:
+------------------------------
+  DB_HOST      — Supabase pooler host 
+  DB_PORT      — Port (Default: 5432 for session pooling)
+  DB_NAME      — Database name (postgres)
+  DB_USER      — Database user (postgres.[project_ref])
   DB_PASSWORD  — Database password
-
-Used by:
-  • src/consumer.py   — batch upserts from Kafka
-  • dags/*.py         — Airflow analysis tasks (via get_engine / get_connection)
-
-Provides connection pooling, SQLAlchemy engine, and pipeline run logging.
 """
 
 import logging

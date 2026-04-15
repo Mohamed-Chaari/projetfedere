@@ -25,7 +25,7 @@ import os
 import signal
 import sys
 import time
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from logging.handlers import RotatingFileHandler
 
 import requests
@@ -165,8 +165,9 @@ def build_message(city: dict, weather: dict, data_type: str,
         "precipitation_probability": weather.get("precipitation_probability"),
 
         # Metadata
+        # Provide trace logs for when we actually retrieved this data
         "source":       weather.get("source", "open-meteo"),
-        "ingested_at":  datetime.utcnow().isoformat() + "Z",
+        "ingested_at":  datetime.now(timezone.utc).isoformat() + "Z",
     }
 
 
@@ -431,7 +432,7 @@ def run_historical(producer, logger):
 
     governorates = list_governorates()
     total_sent = 0
-    cycle_id = datetime.utcnow().isoformat() + "Z"
+    cycle_id = datetime.now(timezone.utc).isoformat() + "Z"
 
     for gov_idx, gov in enumerate(governorates):
         if progress.get(gov) == "done":
@@ -482,7 +483,8 @@ def run_current(producer, logger, cities_fn=None):
     cycle_number = 0
 
     while True:
-        cycle_start = datetime.utcnow()
+        # Step 1: Initialize the tracking for this specific 15-minute polling cycle
+        cycle_start = datetime.now(timezone.utc)
         cycle_id    = cycle_start.strftime("%Y-%m-%dT%H:%M:%SZ")
         cycle_number += 1
         cycle_results = []
@@ -509,7 +511,9 @@ def run_current(producer, logger, cities_fn=None):
         producer.flush()
         check_and_publish_alerts(producer, cycle_results, cycle_id, logger)
 
-        elapsed = (datetime.utcnow() - cycle_start).total_seconds()
+        # Step 2: Time keeping and rate-limit safety checks
+        # If fetching 221 cities takes over 13 minutes, we risk overlapping the next cycle!
+        elapsed = (datetime.now(timezone.utc) - cycle_start).total_seconds()
         if elapsed > 780:   # 13 minutes = breach risk
             logger.critical(
                 f"Cycle took {elapsed:.0f}s — approaching 15-min interval!"
@@ -531,7 +535,7 @@ def run_forecast(producer, logger):
     """Single run: 7-day forecast for all 221 cities (called by Airflow)."""
     session = requests.Session()
     cities  = get_all_cities()
-    cycle_id = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    cycle_id = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     total_sent = 0
 
     for city in cities:
@@ -600,7 +604,7 @@ def main():
         # Single current cycle, then exit (testing)
         session = requests.Session()
         cities = get_all_cities()
-        cycle_id = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        cycle_id = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         for city in cities:
             weather = fetch_current(session, city, logger)
             if weather:
