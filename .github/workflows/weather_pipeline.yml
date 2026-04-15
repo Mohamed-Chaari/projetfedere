@@ -56,5 +56,10 @@ jobs:
           python -m src.producer --mode once
 
       - name: Run consumer
+        if: success()
         run: |
           python -m src.consumer --mode batch
+
+      - name: Clean up SSL certificate files
+        if: always()
+        run: rm -f ca.pem service.cert service.key
