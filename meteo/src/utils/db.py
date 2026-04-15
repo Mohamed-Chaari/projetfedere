@@ -1,6 +1,17 @@
 """
 db.py — Shared database utilities for the Météo Tunisie pipeline.
 
+Connects exclusively to Supabase PostgreSQL (cloud-native).
+All connection parameters are loaded from environment variables
+with NO local fallbacks.
+
+Required environment variables:
+  DB_HOST      — Supabase host  (e.g. db.xxxxx.supabase.co)
+  DB_PORT      — Port           (default: 5432)
+  DB_NAME      — Database name  (default: postgres)
+  DB_USER      — Database user  (default: postgres)
+  DB_PASSWORD  — Database password
+
 Used by:
   • src/consumer.py   — batch upserts from Kafka
   • dags/*.py         — Airflow analysis tasks (via get_engine / get_connection)
@@ -23,15 +34,15 @@ load_dotenv()
 logger = logging.getLogger("MeteoConsumer.db")
 
 # ──────────────────────────────────────────────────────────────
-#  DATABASE CONFIGURATION
+#  DATABASE CONFIGURATION — Supabase only, no local fallbacks
 # ──────────────────────────────────────────────────────────────
 
 DB_CONFIG = {
-    "host":     os.getenv("DB_HOST",     "localhost"),
+    "host":     os.getenv("DB_HOST"),
     "port":     int(os.getenv("DB_PORT", "5432")),
-    "dbname":   os.getenv("DB_NAME",     "meteo_db"),
-    "user":     os.getenv("DB_USER",     "meteo"),
-    "password": os.getenv("DB_PASSWORD", "meteo123"),
+    "dbname":   os.getenv("DB_NAME", "postgres"),
+    "user":     os.getenv("DB_USER", "postgres"),
+    "password": os.getenv("DB_PASSWORD"),
 }
 
 # Singleton connection pool (created on first call)
@@ -41,24 +52,46 @@ _pool = None
 _engine = None
 
 
+def _validate_config():
+    """Validate that required Supabase env vars are set.
+
+    Raises:
+        EnvironmentError: If DB_HOST or DB_PASSWORD is missing.
+    """
+    if not DB_CONFIG["host"]:
+        raise EnvironmentError(
+            "Missing required environment variable: DB_HOST — "
+            "Supabase host (e.g. db.xxxxx.supabase.co). "
+            "Configure your .env with Supabase credentials."
+        )
+    if not DB_CONFIG["password"]:
+        raise EnvironmentError(
+            "Missing required environment variable: DB_PASSWORD — "
+            "Supabase database password. "
+            "Configure your .env with Supabase credentials."
+        )
+
+
 # ──────────────────────────────────────────────────────────────
 #  1. SINGLE CONNECTION
 # ──────────────────────────────────────────────────────────────
 
 def get_connection():
     """
-    Return a single psycopg2 connection from DB_CONFIG.
+    Return a single psycopg2 connection to Supabase.
 
     Raises:
+        EnvironmentError: If required env vars are missing.
         RuntimeError: If the connection cannot be established.
     """
+    _validate_config()
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         conn.autocommit = False
         return conn
     except psycopg2.Error as e:
         raise RuntimeError(
-            f"Failed to connect to PostgreSQL at "
+            f"Failed to connect to Supabase PostgreSQL at "
             f"{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['dbname']} — {e}"
         ) from e
 
@@ -78,6 +111,7 @@ def get_pool(minconn=2, maxconn=10):
     Returns:
         psycopg2.pool.SimpleConnectionPool
     """
+    _validate_config()
     global _pool
     if _pool is None or _pool.closed:
         try:
@@ -104,6 +138,7 @@ def get_engine():
 
     Uses the singleton pattern — engine created once, reused.
     """
+    _validate_config()
     global _engine
     if _engine is None:
         conn_str = (

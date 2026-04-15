@@ -42,3 +42,9 @@ airflow.db
 airflow.cfg
 airflow-webserver.pid
 logs/
+
+# Kafka Certificates
+*.pem
+*.cert
+*.key
+

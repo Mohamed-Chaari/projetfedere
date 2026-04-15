@@ -1,14 +1,27 @@
-"""Shared Kafka connection config with optional SSL auto-detection."""
+"""Kafka connection config — Aiven SSL only (cloud-native).
+
+All connections require SSL with mutual TLS authentication.
+Required environment variables:
+  KAFKA_BOOTSTRAP           — Aiven broker address (host:port)
+  KAFKA_SECURITY_PROTOCOL   — Must be 'SSL'
+  KAFKA_CA_FILE             — Path to Aiven CA certificate (ca.pem)
+  KAFKA_CERT_FILE           — Path to client certificate  (service.cert)
+  KAFKA_KEY_FILE            — Path to client private key   (service.key)
+"""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
-DEFAULT_KAFKA_BOOTSTRAP = (
-    "kafka-projetfedere-projetfedere.l.aivencloud.com:21849"
-)
+from dotenv import load_dotenv
 
+load_dotenv()
+
+
+# ──────────────────────────────────────────────────────────────
+#  PROJECT ROOT DETECTION
+# ──────────────────────────────────────────────────────────────
 
 def _detect_project_root() -> Path:
     """Find project root from env or by walking up for common markers."""
@@ -26,40 +39,72 @@ def _detect_project_root() -> Path:
 PROJECT_ROOT = _detect_project_root()
 
 
-def _resolve_cert_path(env_var: str, default_filename: str) -> Path:
-    """Resolve cert/key path from env var or project root default."""
-    configured = os.getenv(env_var)
-    if configured:
-        path = Path(configured).expanduser()
-        if not path.is_absolute():
-            path = PROJECT_ROOT / path
-        return path
-    return PROJECT_ROOT / default_filename
+# ──────────────────────────────────────────────────────────────
+#  CERTIFICATE PATH RESOLUTION
+# ──────────────────────────────────────────────────────────────
 
+def _resolve_cert_path(env_var: str) -> Path:
+    """Resolve a certificate path from the given env var.
+
+    Raises:
+        EnvironmentError: If the env var is not set.
+        FileNotFoundError: If the resolved file does not exist.
+    """
+    raw = os.getenv(env_var)
+    if not raw:
+        raise EnvironmentError(
+            f"Missing required environment variable: {env_var}. "
+            f"Aiven SSL requires all certificate paths to be configured."
+        )
+
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Certificate file not found: {path}  (from {env_var}={raw}). "
+            f"Download the Aiven SSL certificates and update your .env."
+        )
+    return path
+
+
+# ──────────────────────────────────────────────────────────────
+#  PUBLIC API
+# ──────────────────────────────────────────────────────────────
 
 def get_kafka_connection_config() -> tuple[str, dict]:
+    """Return (bootstrap_servers, ssl_config) for kafka-python clients.
+
+    Enforces Aiven SSL — no plaintext, no SASL, no local fallback.
+
+    Raises:
+        EnvironmentError: If any required variable is missing.
+        FileNotFoundError: If any certificate file is missing.
     """
-    Return bootstrap + optional SSL config for kafka-python clients.
+    bootstrap = os.getenv("KAFKA_BOOTSTRAP")
+    if not bootstrap:
+        raise EnvironmentError(
+            "Missing required environment variable: KAFKA_BOOTSTRAP. "
+            "Set it to your Aiven Kafka broker address (host:port)."
+        )
 
-    SSL is enabled automatically when a CA file is present.
-    """
-    bootstrap = os.getenv("KAFKA_BOOTSTRAP", DEFAULT_KAFKA_BOOTSTRAP)
+    protocol = os.getenv("KAFKA_SECURITY_PROTOCOL", "SSL")
+    if protocol != "SSL":
+        raise EnvironmentError(
+            f"KAFKA_SECURITY_PROTOCOL must be 'SSL' for Aiven, got '{protocol}'. "
+            f"Only Aiven SSL connections are supported."
+        )
 
-    ca_path = _resolve_cert_path("KAFKA_SSL_CA_FILE", "ca.pem")
-    cert_path = _resolve_cert_path("KAFKA_SSL_CERT_FILE", "service.cert")
-    key_path = _resolve_cert_path("KAFKA_SSL_KEY_FILE", "service.key")
+    ca_path   = _resolve_cert_path("KAFKA_CA_FILE")
+    cert_path = _resolve_cert_path("KAFKA_CERT_FILE")
+    key_path  = _resolve_cert_path("KAFKA_KEY_FILE")
 
-    config: dict = {}
-    if ca_path.exists():
-        if not cert_path.exists() or not key_path.exists():
-            raise FileNotFoundError(
-                "SSL auto-detected via ca.pem, but service.cert and/or service.key "
-                "were not found. Set KAFKA_SSL_CERT_FILE and KAFKA_SSL_KEY_FILE or "
-                "provide files in project root."
-            )
-        config["security_protocol"] = "SSL"
-        config["ssl_cafile"] = str(ca_path)
-        config["ssl_certfile"] = str(cert_path)
-        config["ssl_keyfile"] = str(key_path)
+    config = {
+        "security_protocol": "SSL",
+        "ssl_cafile":   str(ca_path),
+        "ssl_certfile": str(cert_path),
+        "ssl_keyfile":  str(key_path),
+    }
 
     return bootstrap, config
