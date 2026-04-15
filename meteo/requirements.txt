@@ -4,7 +4,7 @@
 # ──────────────────────────────────────────────────────────────
 
 # Messaging
-kafka-python==2.0.2
+kafka-python-ng
 
 # Database
 psycopg2-binary
@@ -19,7 +19,7 @@ tabulate
 requests
 
 # Orchestration
-apache-airflow==2.8.0
+#apache-airflow==2.8.0
 
 # Configuration
 python-dotenv
