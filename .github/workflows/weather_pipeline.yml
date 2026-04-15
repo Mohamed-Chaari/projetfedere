@@ -62,13 +62,15 @@ jobs:
       - name: Clean up SSL certificate files
         if: always()
         run: |
-          if command -v shred >/dev/null 2>&1; then
-            for f in service.key service.cert ca.pem; do
-              if [ -f "$f" ] && ! shred -u "$f"; then
-                rm -f "$f"
-                echo "Warning: secure deletion failed for $f; removed with rm"
-              fi
-            done
-          else
-            rm -f ca.pem service.cert service.key
-          fi
+          for f in service.key service.cert ca.pem; do
+            if [ -f "$f" ] && command -v shred >/dev/null 2>&1; then
+              shred -u "$f"
+            fi
+            if [ -f "$f" ]; then
+              rm -f "$f"
+            fi
+            if [ -f "$f" ]; then
+              echo "::error::Failed to delete sensitive file: $f"
+              exit 1
+            fi
+          done
