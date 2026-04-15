@@ -38,13 +38,14 @@ from src.utils.cities import (
     get_cities_by_governorate,
     list_governorates,
 )
+from src.utils.kafka_config import get_kafka_connection_config
 from src.utils.weather_codes import get_description
 from src.utils.validator import validate_message, build_dlq_message
 
 load_dotenv()
 
 # ── Config ────────────────────────────────────────────────────────
-KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
+KAFKA_BOOTSTRAP, KAFKA_CONN_OPTIONS = get_kafka_connection_config()
 OWM_API_KEY     = os.getenv("OWM_API_KEY", "")
 START_DATE      = os.getenv("START_DATE", "2020-01-01")
 END_DATE        = os.getenv("END_DATE",   "2024-12-31")
@@ -99,6 +100,7 @@ def make_producer() -> KafkaProducer:
     """Create a production-grade KafkaProducer with gzip compression."""
     return KafkaProducer(
         bootstrap_servers=KAFKA_BOOTSTRAP,
+        **KAFKA_CONN_OPTIONS,
         acks="all",
         retries=5,
         max_block_ms=30000,
