@@ -5,12 +5,15 @@ on:
     - cron: '*/15 * * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   run-weather-pipeline:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: /home/runner/work/projetfedere/projetfedere/meteo
+        working-directory: meteo
 
     steps:
       - name: Checkout repository
@@ -33,8 +36,9 @@ jobs:
           printf "%s" "$KAFKA_CA_CERT_SECRET" > ca.pem
           printf "%s" "$KAFKA_SERVICE_CERT_SECRET" > service.cert
           printf "%s" "$KAFKA_SERVICE_KEY_SECRET" > service.key
+          chmod 600 ca.pem service.cert service.key
 
-      - name: Run producer and consumer
+      - name: Run producer
         env:
           KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
           KAFKA_SECURITY_PROTOCOL: SSL
@@ -49,4 +53,19 @@ jobs:
           OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
         run: |
           python -m src.producer --mode once
+
+      - name: Run consumer
+        env:
+          KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
+          KAFKA_SECURITY_PROTOCOL: SSL
+          KAFKA_CA_FILE: ca.pem
+          KAFKA_CERT_FILE: service.cert
+          KAFKA_KEY_FILE: service.key
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+        run: |
           python -m src.consumer --mode batch
