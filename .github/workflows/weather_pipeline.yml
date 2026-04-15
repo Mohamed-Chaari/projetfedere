@@ -69,5 +69,6 @@ jobs:
                 echo "Warning: secure deletion failed for $f; removed with rm"
               fi
             done
+          else
+            rm -f ca.pem service.cert service.key
           fi
-          rm -f ca.pem service.cert service.key
