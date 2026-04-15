@@ -49,8 +49,7 @@ jobs:
           printf "%s" "$KAFKA_CA_CERT_SECRET" > ca.pem
           printf "%s" "$KAFKA_SERVICE_CERT_SECRET" > service.cert
           printf "%s" "$KAFKA_SERVICE_KEY_SECRET" > service.key
-          chmod 644 ca.pem
-          chmod 600 service.cert service.key
+          chmod 600 ca.pem service.cert service.key
 
       - name: Run producer
         run: |
@@ -66,7 +65,8 @@ jobs:
           if command -v shred >/dev/null 2>&1; then
             for f in service.key service.cert ca.pem; do
               if [ -f "$f" ] && ! shred -u "$f"; then
-                echo "Warning: secure deletion failed for $f; falling back to rm"
+                rm -f "$f"
+                echo "Warning: secure deletion failed for $f; removed with rm"
               fi
             done
           fi
