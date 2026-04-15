@@ -57,7 +57,6 @@ jobs:
           python -m src.producer --mode once
 
       - name: Run consumer
-        if: success()
         run: |
           python -m src.consumer --mode batch
 
@@ -65,6 +64,10 @@ jobs:
         if: always()
         run: |
           if command -v shred >/dev/null 2>&1; then
-            shred -u service.key service.cert ca.pem || true
+            for f in service.key service.cert ca.pem; do
+              if [ -f "$f" ] && ! shred -u "$f"; then
+                echo "Warning: secure deletion failed for $f; falling back to rm"
+              fi
+            done
           fi
           rm -f ca.pem service.cert service.key
