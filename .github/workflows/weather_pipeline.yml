@@ -12,7 +12,7 @@ on:
           - producer
           - consumer
       mode:
-        description: "Mode (producer: historical/current/forecast/once/capitals/all | consumer: batch/continuous/topic)"
+        description: "Selected mode for chosen component (producer: historical/current/forecast/once/capitals/all, consumer: batch/continuous/topic)"
         required: true
         default: once
         type: string
@@ -25,18 +25,17 @@ jobs:
   weather-pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
 
     defaults:
       run:
         shell: bash
-        working-directory: /home/runner/work/projetfedere/projetfedere/meteo
+        working-directory: ${{ github.workspace }}/meteo
 
     env:
       KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
       KAFKA_SECURITY_PROTOCOL: SSL
-      KAFKA_CA_FILE: ca.pem
-      KAFKA_CERT_FILE: service.cert
-      KAFKA_KEY_FILE: service.key
       KAFKA_CA_PEM: ${{ secrets.KAFKA_CA_PEM }}
       KAFKA_CERT_PEM: ${{ secrets.KAFKA_CERT_PEM }}
       KAFKA_KEY_PEM: ${{ secrets.KAFKA_KEY_PEM }}
@@ -65,6 +64,9 @@ jobs:
       - name: Validate required secrets
         run: |
           required=(KAFKA_BOOTSTRAP KAFKA_CA_PEM KAFKA_CERT_PEM KAFKA_KEY_PEM)
+          if [ "${{ inputs.component }}" = "consumer" ]; then
+            required+=(DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD)
+          fi
           for key in "${required[@]}"; do
             if [ -z "${!key}" ]; then
               echo "Missing required secret: $key"
@@ -74,10 +76,17 @@ jobs:
 
       - name: Write Kafka SSL certificate files
         run: |
-          printf '%s' '${{ secrets.KAFKA_CA_PEM }}' > ca.pem
-          printf '%s' '${{ secrets.KAFKA_CERT_PEM }}' > service.cert
-          printf '%s' '${{ secrets.KAFKA_KEY_PEM }}' > service.key
-          chmod 600 ca.pem service.cert service.key
+          cert_dir="$(mktemp -d)"
+          printf '%s' '${{ secrets.KAFKA_CA_PEM }}' > "$cert_dir/ca.pem"
+          printf '%s' '${{ secrets.KAFKA_CERT_PEM }}' > "$cert_dir/service.cert"
+          printf '%s' '${{ secrets.KAFKA_KEY_PEM }}' > "$cert_dir/service.key"
+          chmod 600 "$cert_dir/ca.pem" "$cert_dir/service.cert" "$cert_dir/service.key"
+          {
+            echo "CERT_DIR=$cert_dir"
+            echo "KAFKA_CA_FILE=$cert_dir/ca.pem"
+            echo "KAFKA_CERT_FILE=$cert_dir/service.cert"
+            echo "KAFKA_KEY_FILE=$cert_dir/service.key"
+          } >> "$GITHUB_ENV"
 
       - name: Validate dispatch inputs
         run: |
@@ -115,3 +124,10 @@ jobs:
       - name: Run consumer (single topic)
         if: ${{ inputs.component == 'consumer' && inputs.mode == 'topic' }}
         run: python -m src.consumer --mode topic --topic "${{ inputs.topic }}"
+
+      - name: Cleanup Kafka SSL certificate files
+        if: ${{ always() }}
+        run: |
+          if [ -n "${CERT_DIR:-}" ] && [ -d "$CERT_DIR" ]; then
+            rm -rf "$CERT_DIR"
+          fi
