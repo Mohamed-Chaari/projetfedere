@@ -25,7 +25,7 @@ TUNISIA_RANGES = {
     "humidity":      (0,   100),   # 0% to 100% relative humidity
     "precipitation": (0,   200),   # Max realistic daily rainfall (mm)
     "wind_speed":    (0,   150),   # Up to violent storm winds (km/h)
-    "pressure":      (950, 1050),  # Standard atmospheric pressure bounds (hPa)
+    "pressure":      (850, 1050),  # Allowed down to 850hPa for high altitudes (Thala, Kesra)
     "forecast_day":  (0,     6),   # We only process up to 6 days into the future
 }
 

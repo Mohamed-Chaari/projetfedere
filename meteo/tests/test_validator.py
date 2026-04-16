@@ -95,7 +95,7 @@ class TestValidateMessage:
         assert "wind_speed" in reason
 
     def test_pressure_out_of_range_low(self):
-        valid, reason = validate_message(_valid_msg(pressure=900))
+        valid, reason = validate_message(_valid_msg(pressure=800))
         assert valid is False
         assert "pressure" in reason
 

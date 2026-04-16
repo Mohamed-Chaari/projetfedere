@@ -207,7 +207,7 @@ def fetch_historical(session, city: dict, logger) -> list[dict]:
             "daily":      ",".join([
                 "temperature_2m_max", "temperature_2m_min",
                 "precipitation_sum", "windspeed_10m_max",
-                "relativehumidity_2m_max", "apparent_temperature_max",
+                "apparent_temperature_max",
             ]),
             "timezone": "Africa/Tunis",
         },
