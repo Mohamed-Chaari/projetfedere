@@ -207,7 +207,7 @@ def send_to_dlq(record: dict, error_reason: str, group_id: str):
             "reason":    error_reason,
             "group_id":  group_id,
             "original":  record,
-            "failed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "failed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         }
         producer = _get_dlq_producer()
         with _dlq_lock:
@@ -294,10 +294,16 @@ def consume_topic(topic: str, group_id: str, table: str,
         for msg in consumer:
             record = msg.value
             
-            # Clean up old corrupted timestamps stuck in Kafka
+            # Clean up corrupted / ambiguous timestamps for PostgreSQL
             for key, val in record.items():
-                if isinstance(val, str) and val.endswith("+00:00Z"):
-                    record[key] = val.replace("+00:00Z", "Z")
+                if isinstance(val, str) and ("T" in val) and len(val) > 18:
+                    # Fix double-suffix: "+00:00Z" → "+00:00"
+                    if val.endswith("+00:00Z"):
+                        val = val[:-1]          # drop trailing Z
+                        record[key] = val
+                    # Fix bare "Z" → "+00:00" (PostgreSQL prefers explicit offset)
+                    elif val.endswith("Z"):
+                        record[key] = val[:-1] + "+00:00"
                 
             batch.append(record)
             stats["last_city"] = record.get("city", "?")

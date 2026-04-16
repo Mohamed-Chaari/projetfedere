@@ -167,7 +167,7 @@ def build_message(city: dict, weather: dict, data_type: str,
         # Metadata
         # Provide trace logs for when we actually retrieved this data
         "source":       weather.get("source", "open-meteo"),
-        "ingested_at":  datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "ingested_at":  datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
     }
 
 
@@ -432,7 +432,7 @@ def run_historical(producer, logger):
 
     governorates = list_governorates()
     total_sent = 0
-    cycle_id = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    cycle_id = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     for gov_idx, gov in enumerate(governorates):
         if progress.get(gov) == "done":
