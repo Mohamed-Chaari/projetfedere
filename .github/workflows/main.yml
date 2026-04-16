@@ -1,0 +1,133 @@
+name: Weather Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: "Pipeline component to run"
+        required: true
+        default: producer
+        type: choice
+        options:
+          - producer
+          - consumer
+      mode:
+        description: "Selected mode for chosen component (producer: historical/current/forecast/once/capitals/all, consumer: batch/continuous/topic)"
+        required: true
+        default: once
+        type: string
+      topic:
+        description: "Consumer topic (required only when consumer mode is topic)"
+        required: false
+        type: string
+
+jobs:
+  weather-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ github.workspace }}/meteo
+
+    env:
+      KAFKA_BOOTSTRAP: ${{ secrets.KAFKA_BOOTSTRAP }}
+      KAFKA_SECURITY_PROTOCOL: SSL
+      KAFKA_CA_PEM: ${{ secrets.KAFKA_CA_PEM }}
+      KAFKA_CERT_PEM: ${{ secrets.KAFKA_CERT_PEM }}
+      KAFKA_KEY_PEM: ${{ secrets.KAFKA_KEY_PEM }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+      TIMEZONE: ${{ vars.TIMEZONE || 'Africa/Tunis' }}
+      START_DATE: ${{ vars.START_DATE || '2020-01-01' }}
+      END_DATE: ${{ vars.END_DATE || '2024-12-31' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Validate required secrets
+        run: |
+          required=(KAFKA_BOOTSTRAP KAFKA_CA_PEM KAFKA_CERT_PEM KAFKA_KEY_PEM)
+          if [ "${{ inputs.component }}" = "consumer" ]; then
+            required+=(DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD)
+          fi
+          for key in "${required[@]}"; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required secret: $key"
+              exit 1
+            fi
+          done
+
+      - name: Write Kafka SSL certificate files
+        run: |
+          cert_dir="$(mktemp -d)"
+          printf '%s' '${{ secrets.KAFKA_CA_PEM }}' > "$cert_dir/ca.pem"
+          printf '%s' '${{ secrets.KAFKA_CERT_PEM }}' > "$cert_dir/service.cert"
+          printf '%s' '${{ secrets.KAFKA_KEY_PEM }}' > "$cert_dir/service.key"
+          chmod 600 "$cert_dir/ca.pem" "$cert_dir/service.cert" "$cert_dir/service.key"
+          {
+            echo "CERT_DIR=$cert_dir"
+            echo "KAFKA_CA_FILE=$cert_dir/ca.pem"
+            echo "KAFKA_CERT_FILE=$cert_dir/service.cert"
+            echo "KAFKA_KEY_FILE=$cert_dir/service.key"
+          } >> "$GITHUB_ENV"
+
+      - name: Validate dispatch inputs
+        run: |
+          component='${{ inputs.component }}'
+          mode='${{ inputs.mode }}'
+          topic='${{ inputs.topic }}'
+
+          if [ "$component" = "producer" ]; then
+            case "$mode" in
+              historical|current|forecast|once|capitals|all) ;;
+              *) echo "Invalid producer mode: $mode"; exit 1 ;;
+            esac
+          elif [ "$component" = "consumer" ]; then
+            case "$mode" in
+              batch|continuous|topic) ;;
+              *) echo "Invalid consumer mode: $mode"; exit 1 ;;
+            esac
+            if [ "$mode" = "topic" ] && [ -z "$topic" ]; then
+              echo "Input 'topic' is required when component=consumer and mode=topic"
+              exit 1
+            fi
+          else
+            echo "Invalid component: $component"
+            exit 1
+          fi
+
+      - name: Run producer
+        if: ${{ inputs.component == 'producer' }}
+        run: python -m src.producer --mode "${{ inputs.mode }}"
+
+      - name: Run consumer
+        if: ${{ inputs.component == 'consumer' && inputs.mode != 'topic' }}
+        run: python -m src.consumer --mode "${{ inputs.mode }}"
+
+      - name: Run consumer (single topic)
+        if: ${{ inputs.component == 'consumer' && inputs.mode == 'topic' }}
+        run: python -m src.consumer --mode topic --topic "${{ inputs.topic }}"
+
+      - name: Cleanup Kafka SSL certificate files
+        if: ${{ always() }}
+        run: |
+          if [ -n "${CERT_DIR:-}" ] && [ -d "$CERT_DIR" ]; then
+            rm -rf "$CERT_DIR"
+          fi
