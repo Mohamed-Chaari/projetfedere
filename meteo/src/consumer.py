@@ -57,7 +57,8 @@ VALUES
    %(latitude)s, %(longitude)s, %(temperature)s, %(temp_max)s,
    %(temp_min)s, %(feels_like)s, %(humidity)s, %(precipitation)s,
    %(wind_speed)s, %(weather_code)s, %(weather_desc)s,
-   %(source)s, %(ingested_at)s)
+   %(source)s,
+   REPLACE(%(ingested_at)s::text, '+00:00Z', '+00:00')::timestamptz)
 ON CONFLICT (date, city) DO UPDATE SET
   temperature   = EXCLUDED.temperature,
   temp_max      = EXCLUDED.temp_max,
@@ -80,7 +81,8 @@ VALUES
    %(latitude)s, %(longitude)s, %(temperature)s, %(feels_like)s,
    %(humidity)s, %(precipitation)s, %(wind_speed)s, %(wind_gusts)s,
    %(pressure)s, %(weather_code)s, %(weather_desc)s,
-   %(source)s, %(cycle_id)s, %(date)s, %(ingested_at)s)
+   %(source)s, %(cycle_id)s, %(date)s,
+   REPLACE(%(ingested_at)s::text, '+00:00Z', '+00:00')::timestamptz)
 ON CONFLICT (city) DO UPDATE SET
   temperature   = EXCLUDED.temperature,
   feels_like    = EXCLUDED.feels_like,
@@ -109,7 +111,8 @@ VALUES
    %(temperature)s, %(temp_max)s, %(temp_min)s,
    %(feels_like)s, %(precipitation)s, %(precipitation_probability)s,
    %(wind_speed)s, %(wind_gusts)s, %(weather_code)s, %(weather_desc)s,
-   %(source)s, %(cycle_id)s, %(ingested_at)s)
+   %(source)s, %(cycle_id)s,
+   REPLACE(%(ingested_at)s::text, '+00:00Z', '+00:00')::timestamptz)
 ON CONFLICT (city, forecast_for) DO UPDATE SET
   temperature                = EXCLUDED.temperature,
   temp_max                   = EXCLUDED.temp_max,
