@@ -52,7 +52,7 @@ def validate_message(msg: dict) -> tuple[bool, str]:
 
     # Step 2: Ensure the message has all the fundamental 'metadata' required to be useful
     required = ["city", "governorate", "region", "date",
-                "temperature", "humidity", "data_type"]
+                "temperature", "data_type"]
     for f in required:
         if not msg.get(f):
             return False, f"missing required field: {f}"

@@ -37,7 +37,7 @@ class TestValidateMessage:
 
     @pytest.mark.parametrize("field", [
         "city", "governorate", "region", "date",
-        "temperature", "humidity", "data_type",
+        "temperature", "data_type",
     ])
     def test_missing_required_field_fails(self, field):
         msg = _valid_msg()
