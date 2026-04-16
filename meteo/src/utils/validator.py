@@ -77,5 +77,5 @@ def build_dlq_message(original: dict, reason: str) -> dict:
         "data_type": original.get("data_type", "unknown"),
         "city":      original.get("city", "unknown"),
         "raw":       original,
-        "failed_at": datetime.now(timezone.utc).isoformat() + "Z",
+        "failed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }

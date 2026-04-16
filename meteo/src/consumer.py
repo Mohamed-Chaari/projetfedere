@@ -207,7 +207,7 @@ def send_to_dlq(record: dict, error_reason: str, group_id: str):
             "reason":    error_reason,
             "group_id":  group_id,
             "original":  record,
-            "failed_at": datetime.now(timezone.utc).isoformat() + "Z",
+            "failed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
         producer = _get_dlq_producer()
         with _dlq_lock:
