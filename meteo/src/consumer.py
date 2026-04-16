@@ -293,6 +293,12 @@ def consume_topic(topic: str, group_id: str, table: str,
     try:
         for msg in consumer:
             record = msg.value
+            
+            # Clean up old corrupted timestamps stuck in Kafka
+            ingested_at = record.get("ingested_at")
+            if isinstance(ingested_at, str) and ingested_at.endswith("+00:00Z"):
+                record["ingested_at"] = ingested_at.replace("+00:00Z", "Z")
+                
             batch.append(record)
             stats["last_city"] = record.get("city", "?")
 
