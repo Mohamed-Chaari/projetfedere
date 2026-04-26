@@ -1,0 +1,15 @@
+
+# Certs SSL — jamais sur GitHub
+include/ca.pem
+include/service.cert
+include/service.key
+
+# Env
+.env
+
+# Logs et cache
+logs/
+__pycache__/
+*.pyc
+venv/
+.pytest_cache/
