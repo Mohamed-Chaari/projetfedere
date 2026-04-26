@@ -10,7 +10,7 @@ from airflow.exceptions import AirflowException
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from meteo.src.utils.db import get_connection, log_pipeline_run
+from src.utils.db import get_connection, log_pipeline_run
 
 logger = logging.getLogger(__name__)
 

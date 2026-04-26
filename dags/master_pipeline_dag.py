@@ -8,24 +8,24 @@ from airflow.providers.standard.operators.python import PythonOperator
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from meteo.src.utils.db import get_connection, log_pipeline_run
+from src.utils.db import get_connection, log_pipeline_run
 
 # Import callables
-from dags.monthly_analysis_dag import (
+from monthly_analysis_dag import (
     compute_monthly_averages_fn as compute_monthly_averages,
     check_data_freshness_fn as check_data_freshness
 )
-from dags.peak_detection_dag import (
+from peak_detection_dag import (
     detect_peaks_fn as detect_peaks
 )
-from dags.correlation_dag import (
+from correlation_dag import (
     compute_correlations_fn as compute_correlations,
     check_min_data_fn as check_min_data
 )
-from dags.annual_stats_dag import (
+from annual_stats_dag import (
     compute_annual_stats_fn as compute_annual_stats
 )
-from dags.data_quality_dag import (
+from data_quality_dag import (
     run_quality_checks_fn as run_quality_checks
 )
 
