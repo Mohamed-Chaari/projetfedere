@@ -47,10 +47,10 @@ def get_current_weather(
     conditions = []
 
     if governorate:
-        conditions.append("governorate = :governorate")
+        conditions.append("LOWER(governorate) = LOWER(:governorate)")
         params["governorate"] = governorate
     if region:
-        conditions.append("region = :region")
+        conditions.append("LOWER(region) = LOWER(:region)")
         params["region"] = region
 
     if conditions:
@@ -59,6 +59,13 @@ def get_current_weather(
     query += " ORDER BY governorate, city"
 
     result = execute_query(query, params)
+
+    if not result and (governorate or region):
+        raise HTTPException(
+            status_code=404,
+            detail="No data found for the specified filters"
+        )
+
     return result
 
 @router.get("/current/{city}", response_model=CurrentWeather)
