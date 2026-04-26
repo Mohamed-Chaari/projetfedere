@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import dashboard, analysis, forecast, alerts, auth
+from api.database import health_check
 
 app = FastAPI(
     title="Tunisia Meteo API",
@@ -24,4 +25,9 @@ app.include_router(alerts.router,    prefix="/api/alerts",    tags=["Alerts"])
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "Tunisia Meteo API"}
+    db_ok = health_check()
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "service": "Tunisia Meteo API",
+        "database": "connected" if db_ok else "disconnected"
+    }
