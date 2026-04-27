@@ -41,12 +41,12 @@ services:
       AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: Africa/Tunis
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: admin
-      _AIRFLOW_WWW_USER_PASSWORD: admin
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
     entrypoint: >
       bash -c "
         airflow db migrate &&
-        airflow users create --username admin --password admin
+        airflow users create --username ${AIRFLOW_ADMIN_USER} --password ${AIRFLOW_ADMIN_PASSWORD}
           --firstname Admin --lastname User --role Admin
           --email admin@meteo.tn || true &&
         airflow webserver --port 8080 &
