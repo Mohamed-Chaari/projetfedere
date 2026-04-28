@@ -1,0 +1,42 @@
+/* Loading Skeleton State */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-card) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Error States */
+.error-state {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+}
+.error-state .error-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+.error-state .retry-btn {
+  margin-top: 16px;
+  padding: 10px 24px;
+  background: var(--accent-cyan);
+  border: none;
+  border-radius: 8px;
+  color: #0D1B2A;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.error-state .retry-btn:hover {
+  opacity: 0.9;
+}

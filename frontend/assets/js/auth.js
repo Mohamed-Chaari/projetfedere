@@ -5,12 +5,12 @@ const Auth = {
   isLoggedIn() { return !!this.getToken(); },
   requireAuth() {
     if (!this.isLoggedIn()) {
-      window.location.href = '/frontend/login.html';
+      window.location.href = './login.html';
     }
   },
   logout() {
     this.removeToken();
     localStorage.removeItem('meteo_user');
-    window.location.href = '/frontend/login.html';
+    window.location.href = './login.html';
   },
 };

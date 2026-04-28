@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Tunisia Meteo</title>
-  <link rel="stylesheet" href="/frontend/assets/css/theme.css">
-  <link rel="stylesheet" href="/frontend/assets/css/layout.css">
+  <link rel="stylesheet" href="./assets/css/theme.css">
+  <link rel="stylesheet" href="./assets/css/layout.css">
 
   <style>
     /* Pre-auth specific styles */
@@ -157,7 +157,7 @@
 </head>
 <body>
   <video id="bg-video" autoplay muted loop class="video-bg">
-    <source src="/frontend/assets/videos/cloudy.mp4" type="video/mp4">
+    <source src="./assets/videos/cloudy.mp4" type="video/mp4">
   </video>
   <div class="video-overlay"></div>
 
@@ -191,9 +191,9 @@
     </div>
   </div>
 
-  <script src="/frontend/assets/js/api.js"></script>
-  <script src="/frontend/assets/js/auth.js"></script>
-  <script src="/frontend/assets/js/theme.js"></script>
+  <script src="./assets/js/api.js"></script>
+  <script src="./assets/js/auth.js"></script>
+  <script src="./assets/js/theme.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -201,7 +201,7 @@
 
       // If already logged in → redirect
       if (Auth.isLoggedIn()) {
-        window.location.href = '/frontend/dashboard.html';
+        window.location.href = './dashboard.html';
         return;
       }
 
@@ -223,7 +223,7 @@
           const data = await API.login(username, password);
           Auth.setToken(data.access_token);
           localStorage.setItem('meteo_user', username);
-          window.location.href = '/frontend/dashboard.html';
+          window.location.href = './dashboard.html';
         } catch (err) {
           errorDiv.textContent = '❌ Identifiants incorrects. Réessayez.';
           errorDiv.style.display = 'block';

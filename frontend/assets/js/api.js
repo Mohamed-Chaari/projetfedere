@@ -1,5 +1,6 @@
-const BASE_URL = 'https://tunisia-meteo-api.onrender.com';
-// Change to http://localhost:8000 for local dev
+const BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : 'https://tunisia-meteo-api.onrender.com';
 
 const API = {
 
@@ -11,7 +12,7 @@ const API = {
     const headers = { 'Content-Type': 'application/json' };
     if (auth) {
       const token = this.getToken();
-      if (!token) { window.location.href = '/frontend/login.html'; return; }
+      if (!token) { window.location.href = './login.html'; return; }
       headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
@@ -27,7 +28,7 @@ const API = {
       const res = await fetch(url, config);
       if (res.status === 401 || res.status === 403) {
         localStorage.removeItem('meteo_token');
-        window.location.href = '/frontend/login.html';
+        window.location.href = './login.html';
         return null;
       }
       if (!res.ok) {
