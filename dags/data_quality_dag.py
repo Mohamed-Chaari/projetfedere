@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
@@ -40,7 +40,7 @@ with DAG(
         }
 
         conn = get_connection()
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         total_issues = 0
 
         try:

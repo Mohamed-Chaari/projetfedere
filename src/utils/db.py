@@ -28,7 +28,7 @@ Required Environment Variables:
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import psycopg2
 from psycopg2 import pool
@@ -179,7 +179,7 @@ def log_pipeline_run(dag_name, task_name, started_at,
         error_message:  Optional error details.
     """
     try:
-        finished_at = datetime.utcnow()
+        finished_at = datetime.now(timezone.utc)
         duration_seconds = (finished_at - started_at).total_seconds()
 
         conn = get_connection()
