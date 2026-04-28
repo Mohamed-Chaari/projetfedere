@@ -18,6 +18,8 @@ const Theme = {
         });
       });
     }
+    // Dispatch custom event for map tile swapping
+    document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
   },
   toggle() {
     const current = localStorage.getItem('meteo_theme') || 'dark';
