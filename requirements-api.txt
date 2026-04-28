@@ -7,3 +7,5 @@ python-dotenv
 pyjwt
 pydantic
 python-multipart
+pytest
+httpx
