@@ -3,10 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peaks - Tunisia Meteo</title>
+  <title>Pics de Température - Tunisia Meteo</title>
   <link rel="stylesheet" href="/frontend/assets/css/theme.css">
   <link rel="stylesheet" href="/frontend/assets/css/layout.css">
   <link rel="stylesheet" href="/frontend/assets/css/components.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <style>
+    /* Stats Bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-badge {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .stat-icon {
+      font-size: 2rem;
+    }
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    /* Filters */
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .form-select, .form-input {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+    }
+    .form-input {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    /* Chart */
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+    }
+    .plotly-container {
+      width: 100%;
+      height: 400px;
+    }
+
+    /* Data Table */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      overflow-x: auto;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .data-table th, .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table th {
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .data-table th:hover { color: var(--accent-cyan); }
+    .data-table td { color: var(--text-primary); }
+    .sort-icon { font-size: 0.8rem; margin-left: 4px; color: var(--text-muted); }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .page-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .page-btn.active {
+      background: var(--accent-cyan);
+      color: #0D1B2A;
+      border-color: var(--accent-cyan);
+    }
+    .page-btn:hover:not(.active) {
+      background: var(--border);
+    }
+
+    /* Loading overlay */
+    #loading-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+  </style>
 </head>
 <body>
   <video id="bg-video" autoplay muted loop class="video-bg">
@@ -18,17 +160,107 @@
 
   <main class="main-content">
     <div class="page-header">
-      <h1 class="page-title">Peaks</h1>
-      <p class="page-subtitle">Temperature peaks.</p>
+      <h1 class="page-title">Pics de Température</h1>
+      <p class="page-subtitle">Détection des anomalies et extrêmes climatiques.</p>
     </div>
-    <!-- TODO: Implement peaks content -->
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-badge">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-info">
+          <div class="stat-value" id="stat-extreme">0</div>
+          <div class="stat-label">Extrême</div>
+        </div>
+      </div>
+      <div class="stat-badge">
+        <div class="stat-icon">🟡</div>
+        <div class="stat-info">
+          <div class="stat-value" id="stat-high">0</div>
+          <div class="stat-label">Élevé</div>
+        </div>
+      </div>
+      <div class="stat-badge">
+        <div class="stat-icon">🟢</div>
+        <div class="stat-info">
+          <div class="stat-value" id="stat-moderate">0</div>
+          <div class="stat-label">Modéré</div>
+        </div>
+      </div>
+      <div class="stat-badge" style="border-color: var(--accent-cyan);">
+        <div class="stat-icon">📊</div>
+        <div class="stat-info">
+          <div class="stat-value" id="stat-total" style="color: var(--accent-cyan);">0</div>
+          <div class="stat-label">Total Détecté</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="loading-state">
+      <div class="spinner"></div>
+      <div>Analyse des données historiques...</div>
+    </div>
+
+    <div id="content-wrapper" style="display: none;">
+      <!-- Filters -->
+      <div class="controls-bar">
+        <select id="filter-severity" class="form-select">
+          <option value="">Toutes les sévérités</option>
+          <option value="EXTREME">Extrême</option>
+          <option value="HIGH">Élevé</option>
+          <option value="MODERATE">Modéré</option>
+        </select>
+        <input type="text" id="search-city" class="form-input" placeholder="Filtrer par ville...">
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-card">
+        <div id="scatter-chart" class="plotly-container"></div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-container">
+        <table class="data-table" id="peaks-table">
+          <thead>
+            <tr>
+              <th onclick="handleSort('date')">Date <span class="sort-icon">⇅</span></th>
+              <th onclick="handleSort('city')">Ville <span class="sort-icon">⇅</span></th>
+              <th onclick="handleSort('governorate')">Gouvernorat <span class="sort-icon">⇅</span></th>
+              <th onclick="handleSort('temperature')">Temp (°C) <span class="sort-icon">⇅</span></th>
+              <th onclick="handleSort('z_score')">Z-Score <span class="sort-icon">⇅</span></th>
+              <th onclick="handleSort('severity')">Sévérité <span class="sort-icon">⇅</span></th>
+              <th>Méthode</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Injected via JS -->
+          </tbody>
+        </table>
+        <div class="pagination" id="pagination">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="/frontend/assets/js/api.js"></script>
   <script src="/frontend/assets/js/auth.js"></script>
   <script src="/frontend/assets/js/theme.js"></script>
   <script src="/frontend/assets/js/video-bg.js"></script>
+
   <script>
+    let allPeaksData = [];
+    let filteredData = [];
+
+    // Pagination state
+    let currentPage = 1;
+    const rowsPerPage = 50;
+
+    // Sorting state
+    let currentSortCol = 'date';
+    let currentSortAsc = false; // default desc for date
+
     async function loadNavbar() {
       const res = await fetch('/frontend/assets/components/navbar.html');
       const html = await res.text();
@@ -37,11 +269,232 @@
       document.querySelector(`a[href="${page}"]`)?.classList.add('active');
     }
 
+    // Number animation
+    function animateValue(obj, start, end, duration) {
+      if (!obj) return;
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const easeOut = 1 - (1 - progress) * (1 - progress);
+        const current = start + easeOut * (end - start);
+        obj.innerHTML = Math.floor(current);
+        if (progress < 1) window.requestAnimationFrame(step);
+        else obj.innerHTML = end; // ensure exact end
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    function updateStats(data) {
+      const total = data.length;
+      const extreme = data.filter(d => (d.severity||'').toUpperCase() === 'EXTREME').length;
+      const high = data.filter(d => (d.severity||'').toUpperCase() === 'HIGH').length;
+      const moderate = data.filter(d => (d.severity||'').toUpperCase() === 'MODERATE').length;
+
+      animateValue(document.getElementById('stat-total'), 0, total, 1000);
+      animateValue(document.getElementById('stat-extreme'), 0, extreme, 1000);
+      animateValue(document.getElementById('stat-high'), 0, high, 1000);
+      animateValue(document.getElementById('stat-moderate'), 0, moderate, 1000);
+    }
+
+    function renderScatter(data) {
+      const theme = localStorage.getItem('meteo_theme') || 'dark';
+      const fontColor = theme === 'dark' ? '#E8F4FD' : '#0D1B2A';
+
+      const getColor = (sev) => {
+        const s = (sev || '').toUpperCase();
+        if(s === 'EXTREME') return '#FF4757';
+        if(s === 'HIGH') return '#FFB800';
+        return '#00B4A6'; // Moderate
+      };
+
+      const trace = {
+        x: data.map(d => d.peak_date || d.timestamp || d.time),
+        y: data.map(d => d.temperature),
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+          size: data.map(d => Math.max(8, (d.z_score || 2) * 4)),
+          color: data.map(d => getColor(d.severity)),
+          opacity: 0.7,
+          line: { width: 1, color: fontColor }
+        },
+        text: data.map(d => `${d.city} | ${d.temperature}°C<br>Z: ${(d.z_score||0).toFixed(2)} | ${d.severity}`),
+        hoverinfo: 'text'
+      };
+
+      const layout = {
+        title: { text: 'Pics de température détectés — mean + 2σ', font: { color: fontColor } },
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        font: { color: fontColor },
+        margin: { t: 50, r: 20, l: 50, b: 40 },
+        xaxis: { title: 'Date', gridcolor: 'rgba(128,128,128,0.2)' },
+        yaxis: { title: 'Température (°C)', gridcolor: 'rgba(128,128,128,0.2)' },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('scatter-chart', [trace], layout, {responsive: true});
+    }
+
+    function getBadgeHTML(severity) {
+      const s = (severity || '').toUpperCase();
+      if(s === 'EXTREME') return '<span class="badge badge-extreme">EXTREME</span>';
+      if(s === 'HIGH') return '<span class="badge badge-high">HIGH</span>';
+      return '<span class="badge badge-moderate">MODERATE</span>';
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+
+      if(filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Aucun pic trouvé.</td></tr>';
+        renderPagination(0);
+        return;
+      }
+
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const pageData = filteredData.slice(startIndex, startIndex + rowsPerPage);
+
+      pageData.forEach(d => {
+        const dateStr = d.peak_date || d.timestamp || d.time || '--';
+        const formattedDate = new Date(dateStr).toLocaleDateString('fr-FR', {
+          year: 'numeric', month: 'short', day: 'numeric'
+        });
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${formattedDate}</td>
+          <td style="font-weight:600;">${d.city || '--'}</td>
+          <td>${d.governorate || '--'}</td>
+          <td style="color:var(--accent-red); font-weight:bold;">${d.temperature !== undefined ? d.temperature.toFixed(1) : '--'}</td>
+          <td>${d.z_score !== undefined ? d.z_score.toFixed(2) : '--'}</td>
+          <td>${getBadgeHTML(d.severity)}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">${d.method || 'Statistical'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderPagination(Math.ceil(filteredData.length / rowsPerPage));
+    }
+
+    function renderPagination(totalPages) {
+      const container = document.getElementById('pagination');
+      container.innerHTML = '';
+      if(totalPages <= 1) return;
+
+      // Previous btn
+      const prev = document.createElement('button');
+      prev.className = 'page-btn';
+      prev.innerText = '«';
+      prev.disabled = currentPage === 1;
+      prev.onclick = () => { if(currentPage > 1) { currentPage--; renderTable(); } };
+      container.appendChild(prev);
+
+      // Page numbers (simplified logic for max 5 buttons)
+      let startP = Math.max(1, currentPage - 2);
+      let endP = Math.min(totalPages, startP + 4);
+      if (endP - startP < 4) startP = Math.max(1, endP - 4);
+
+      for(let i = startP; i <= endP; i++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+        btn.innerText = i;
+        btn.onclick = () => { currentPage = i; renderTable(); };
+        container.appendChild(btn);
+      }
+
+      // Next btn
+      const next = document.createElement('button');
+      next.className = 'page-btn';
+      next.innerText = '»';
+      next.disabled = currentPage === totalPages;
+      next.onclick = () => { if(currentPage < totalPages) { currentPage++; renderTable(); } };
+      container.appendChild(next);
+    }
+
+    function handleSort(column) {
+      if(currentSortCol === column) {
+        currentSortAsc = !currentSortAsc; // toggle direction
+      } else {
+        currentSortCol = column;
+        currentSortAsc = true; // default asc for new col
+      }
+
+      filteredData.sort((a, b) => {
+        let valA = a[column];
+        let valB = b[column];
+
+        if(valA === undefined || valA === null) valA = '';
+        if(valB === undefined || valB === null) valB = '';
+
+        if(typeof valA === 'string') {
+          return currentSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        } else {
+          return currentSortAsc ? valA - valB : valB - valA;
+        }
+      });
+
+      currentPage = 1;
+      renderTable();
+    }
+
+    function applyFilters() {
+      const sev = document.getElementById('filter-severity').value.toUpperCase();
+      const search = document.getElementById('search-city').value.toLowerCase();
+
+      filteredData = allPeaksData.filter(d => {
+        if(sev && (d.severity||'').toUpperCase() !== sev) return false;
+        if(search && !(d.city||'').toLowerCase().includes(search)) return false;
+        return true;
+      });
+
+      // re-apply active sort
+      handleSort(currentSortCol);
+      // handleSort calls renderTable internally
+    }
+
+    document.addEventListener('themeChanged', () => {
+      if(allPeaksData.length > 0) renderScatter(filteredData);
+    });
+
     document.addEventListener('DOMContentLoaded', async () => {
       Auth.requireAuth();
       await loadNavbar();
       Theme.init();
       VideoBg.setFromTime();
+
+      try {
+        // Fetch a large sample for accurate stats and display
+        const peaks = await API.getPeaks({ limit: 10000 });
+        allPeaksData = peaks || [];
+        filteredData = [...allPeaksData];
+
+        updateStats(allPeaksData);
+
+        // Initial Sort (by date desc)
+        currentSortCol = 'date';
+        currentSortAsc = false;
+        filteredData.sort((a,b) => {
+          const dA = new Date(a.peak_date || a.timestamp || a.time).getTime();
+          const dB = new Date(b.peak_date || b.timestamp || b.time).getTime();
+          return dB - dA;
+        });
+
+        renderScatter(filteredData);
+        renderTable();
+
+        // Bind filter events
+        document.getElementById('filter-severity').addEventListener('change', applyFilters);
+        document.getElementById('search-city').addEventListener('input', applyFilters);
+
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('content-wrapper').style.display = 'block';
+
+      } catch (err) {
+        console.error("Error loading peaks data", err);
+        document.getElementById('loading-state').innerHTML = '<div style="color:var(--accent-red);">Erreur lors du chargement des données.</div>';
+      }
     });
   </script>
 </body>
