@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Tunisia Meteo API",
+    title="weather.tn API",
     description="National Weather Analytics System — 221 cities, 24 governorates",
     version="1.0.0",
 )
@@ -38,11 +38,11 @@ async def startup():
 def root():
     return RedirectResponse(url="/docs")
 
-app.include_router(auth.router,      prefix="/api/auth",      tags=["Auth"])
-app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
-app.include_router(analysis.router,  prefix="/api/analysis",  tags=["Analysis"])
-app.include_router(forecast.router,  prefix="/api/forecast",  tags=["Forecast"])
-app.include_router(alerts.router,    prefix="/api/alerts",    tags=["Alerts"])
+app.include_router(auth.router,      tags=["Auth"])
+app.include_router(dashboard.router, tags=["Dashboard"])
+app.include_router(analysis.router,  tags=["Analysis"])
+app.include_router(forecast.router,  tags=["Forecast"])
+app.include_router(alerts.router,    tags=["Alerts"])
 
 @app.get("/health")
 def health():
