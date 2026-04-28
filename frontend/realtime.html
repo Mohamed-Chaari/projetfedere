@@ -7,6 +7,155 @@
   <link rel="stylesheet" href="/frontend/assets/css/theme.css">
   <link rel="stylesheet" href="/frontend/assets/css/layout.css">
   <link rel="stylesheet" href="/frontend/assets/css/components.css">
+
+  <style>
+    /* Filters and Stats Bar */
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .form-select, .form-input {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      min-width: 200px;
+    }
+    .form-input {
+      flex: 1;
+      min-width: 250px;
+    }
+    .stats-bar {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-left: auto;
+      text-align: right;
+    }
+
+    /* Grid Layout for City Cards */
+    .city-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 1200px) { .city-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 900px)  { .city-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px)  { .city-grid { grid-template-columns: 1fr; } }
+
+    /* City Card */
+    .city-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .city-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 212, 255, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .city-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .city-region {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .main-weather {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .weather-icon {
+      font-size: 3rem;
+      line-height: 1;
+    }
+    .temp-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .temp-main {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      line-height: 1;
+    }
+    .temp-feels {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .weather-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--border);
+    }
+    .detail-item {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-footer {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .weather-desc {
+      font-weight: 600;
+    }
+
+    /* Skeleton Loading Animation */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border) 50%, var(--bg-secondary) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 4px;
+    }
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-text { height: 16px; margin-bottom: 8px; width: 80%; }
+    .skeleton-title { height: 24px; width: 50%; }
+    .skeleton-icon { height: 48px; width: 48px; border-radius: 50%; }
+    .skeleton-temp { height: 36px; width: 80px; }
+
+  </style>
 </head>
 <body>
   <video id="bg-video" autoplay muted loop class="video-bg">
@@ -21,14 +170,57 @@
       <h1 class="page-title">Realtime Conditions</h1>
       <p class="page-subtitle">Live weather data across all cities.</p>
     </div>
-    <!-- TODO: Implement realtime content -->
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <select id="filter-region" class="form-select">
+        <option value="">Toutes les Régions</option>
+      </select>
+      <select id="filter-gov" class="form-select" disabled>
+        <option value="">Tous les Gouvernorats</option>
+      </select>
+      <select id="sort-by" class="form-select">
+        <option value="name">Trier par: Nom (A-Z)</option>
+        <option value="temp-desc">Trier par: Temp (Chaud → Froid)</option>
+        <option value="temp-asc">Trier par: Temp (Froid → Chaud)</option>
+        <option value="gov">Trier par: Gouvernorat</option>
+      </select>
+      <input type="text" id="search-city" class="form-input" placeholder="Rechercher une ville...">
+
+      <div class="stats-bar" id="stats-bar">
+        Chargement...
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="city-grid" id="city-grid">
+      <!-- Skeletons injected by JS initially -->
+    </div>
   </main>
 
   <script src="/frontend/assets/js/api.js"></script>
   <script src="/frontend/assets/js/auth.js"></script>
   <script src="/frontend/assets/js/theme.js"></script>
   <script src="/frontend/assets/js/video-bg.js"></script>
+
   <script>
+    let allCitiesData = [];
+    let lastUpdatedTime = new Date();
+    let nextRefreshTime = new Date();
+
+    // WMO Weather Code to Emoji mapping
+    function getWeatherEmoji(code) {
+      if (code === undefined || code === null) return '☁️';
+      if (code <= 1) return '☀️';
+      if (code <= 3) return '⛅';
+      if (code >= 45 && code <= 48) return '🌫';
+      if (code >= 51 && code <= 67) return '🌧';
+      if (code >= 71 && code <= 77) return '❄️';
+      if (code >= 80 && code <= 82) return '🌦';
+      if (code >= 95) return '⛈';
+      return '☁️';
+    }
+
     async function loadNavbar() {
       const res = await fetch('/frontend/assets/components/navbar.html');
       const html = await res.text();
@@ -37,11 +229,209 @@
       document.querySelector(`a[href="${page}"]`)?.classList.add('active');
     }
 
+    function renderSkeletons() {
+      const grid = document.getElementById('city-grid');
+      grid.innerHTML = '';
+      for(let i = 0; i < 12; i++) {
+        grid.innerHTML += `
+          <div class="city-card">
+            <div class="card-header">
+              <div class="skeleton skeleton-title"></div>
+            </div>
+            <div class="main-weather">
+              <div class="skeleton skeleton-icon"></div>
+              <div class="temp-info">
+                <div class="skeleton skeleton-temp"></div>
+                <div class="skeleton skeleton-text" style="margin-top:8px;"></div>
+              </div>
+            </div>
+            <div class="weather-details">
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function renderCards(data) {
+      const grid = document.getElementById('city-grid');
+      grid.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">Aucune ville trouvée.</div>';
+        return;
+      }
+
+      data.forEach(city => {
+        const temp = city.temperature ?? '--';
+        const feelsLike = city.feels_like ?? temp;
+        const humidity = city.humidity ?? '--';
+        const wind = city.wind_speed ?? '--';
+        const pressure = city.pressure ?? '--';
+        const precip = city.precipitation ?? 0;
+        const emoji = getWeatherEmoji(city.weather_code);
+        const desc = city.weather_description || 'Inconnu';
+        // Extract time from ingested_at or use current
+        const updatedStr = city.ingested_at ? new Date(city.ingested_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
+
+        const card = document.createElement('div');
+        card.className = 'city-card';
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="city-name">🏙 ${city.city}</div>
+            <div class="city-region">${city.region || ''}</div>
+          </div>
+          <div class="main-weather">
+            <div class="weather-icon">${emoji}</div>
+            <div class="temp-info">
+              <div class="temp-main">${typeof temp === 'number' ? temp.toFixed(1) : temp}°C</div>
+              <div class="temp-feels">ressenti ${typeof feelsLike === 'number' ? feelsLike.toFixed(1) : feelsLike}°C</div>
+            </div>
+          </div>
+          <div class="weather-details">
+            <div class="detail-item">💧 ${humidity}%</div>
+            <div class="detail-item">💨 ${typeof wind === 'number' ? wind.toFixed(1) : wind} km/h</div>
+            <div class="detail-item">🌧 ${typeof precip === 'number' ? precip.toFixed(1) : precip}mm</div>
+            <div class="detail-item">📊 ${typeof pressure === 'number' ? pressure.toFixed(0) : pressure} hPa</div>
+          </div>
+          <div class="card-footer">
+            <div class="weather-desc">${desc}</div>
+            <div>Maj: ${updatedStr}</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function populateDropdowns(data) {
+      const regionSelect = document.getElementById('filter-region');
+      const govSelect = document.getElementById('filter-gov');
+
+      const regions = [...new Set(data.map(c => c.region).filter(Boolean))].sort();
+
+      regionSelect.innerHTML = '<option value="">Toutes les Régions</option>';
+      regions.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r; opt.textContent = r;
+        regionSelect.appendChild(opt);
+      });
+
+      // Handle cascading update
+      regionSelect.addEventListener('change', () => {
+        const selectedRegion = regionSelect.value;
+        if (!selectedRegion) {
+          govSelect.innerHTML = '<option value="">Tous les Gouvernorats</option>';
+          govSelect.disabled = true;
+          applyFilters();
+          return;
+        }
+
+        const filteredGovs = [...new Set(data.filter(c => c.region === selectedRegion).map(c => c.governorate).filter(Boolean))].sort();
+        govSelect.innerHTML = '<option value="">Tous les Gouvernorats</option>';
+        filteredGovs.forEach(g => {
+          const opt = document.createElement('option');
+          opt.value = g; opt.textContent = g;
+          govSelect.appendChild(opt);
+        });
+        govSelect.disabled = false;
+        applyFilters();
+      });
+
+      govSelect.addEventListener('change', applyFilters);
+    }
+
+    function applyFilters() {
+      const region = document.getElementById('filter-region').value;
+      const gov = document.getElementById('filter-gov').value;
+      const search = document.getElementById('search-city').value.toLowerCase();
+      const sort = document.getElementById('sort-by').value;
+
+      let filtered = allCitiesData.filter(c => {
+        if (region && c.region !== region) return false;
+        if (gov && c.governorate !== gov) return false;
+        if (search && !c.city.toLowerCase().includes(search)) return false;
+        return true;
+      });
+
+      if (sort === 'name') filtered.sort((a,b) => a.city.localeCompare(b.city));
+      else if (sort === 'temp-desc') filtered.sort((a,b) => (b.temperature || 0) - (a.temperature || 0));
+      else if (sort === 'temp-asc') filtered.sort((a,b) => (a.temperature || 0) - (b.temperature || 0));
+      else if (sort === 'gov') filtered.sort((a,b) => (a.governorate || '').localeCompare(b.governorate || ''));
+
+      renderCards(filtered);
+    }
+
+    function setVideoBackground(currentData) {
+      if (!currentData?.length) return;
+      const validCodes = currentData.filter(c => c.weather_code !== undefined && c.weather_code !== null);
+      if (validCodes.length === 0) {
+        VideoBg.setFromTime();
+        return;
+      }
+      const avgCode = Math.round(
+        validCodes.reduce((s, c) => s + c.weather_code, 0) / validCodes.length
+      );
+      VideoBg.setFromWeatherCode(avgCode);
+    }
+
+    function updateStatsBar() {
+      const statsBar = document.getElementById('stats-bar');
+      const now = new Date();
+      const diffMs = nextRefreshTime - now;
+      let diffMins = Math.floor(diffMs / 60000);
+      let diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+      if (diffMs <= 0) {
+        diffMins = 0; diffSecs = 0;
+      }
+
+      const lastUpdatedStr = lastUpdatedTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) + ' UTC';
+      statsBar.innerHTML = `<strong>${allCitiesData.length}</strong> villes • Dernière MAJ: ${lastUpdatedStr} • Prochaine: dans ${diffMins}:${diffSecs.toString().padStart(2, '0')}`;
+    }
+
+    async function fetchData() {
+      try {
+        const data = await API.getCurrentAll();
+        allCitiesData = data || [];
+
+        lastUpdatedTime = new Date();
+        nextRefreshTime = new Date(lastUpdatedTime.getTime() + 15 * 60000); // +15 mins
+
+        if (allCitiesData.length > 0) {
+          populateDropdowns(allCitiesData);
+          applyFilters();
+          setVideoBackground(allCitiesData);
+        } else {
+          renderCards([]);
+        }
+        updateStatsBar();
+      } catch (err) {
+        console.error("Failed to fetch realtime data", err);
+        renderCards([]);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       Auth.requireAuth();
       await loadNavbar();
       Theme.init();
-      VideoBg.setFromTime();
+
+      renderSkeletons();
+
+      // Event listeners for sort and search
+      document.getElementById('sort-by').addEventListener('change', applyFilters);
+      document.getElementById('search-city').addEventListener('input', applyFilters);
+
+      await fetchData();
+
+      // Countdown timer update (every second)
+      setInterval(updateStatsBar, 1000);
+
+      // Auto-refresh data (every 15 min)
+      setInterval(fetchData, 15 * 60 * 1000);
     });
   </script>
 </body>

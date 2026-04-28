@@ -7,6 +7,182 @@
   <link rel="stylesheet" href="/frontend/assets/css/theme.css">
   <link rel="stylesheet" href="/frontend/assets/css/layout.css">
   <link rel="stylesheet" href="/frontend/assets/css/components.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Plotly JS -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <style>
+    /* Dashboard specific layout */
+    .dashboard-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Active alerts strip */
+    #alert-container {
+      display: none; /* hidden by default */
+    }
+    .alert-strip {
+      justify-content: space-between;
+    }
+    .alert-dismiss {
+      background: none;
+      border: none;
+      color: var(--accent-red);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0 8px;
+    }
+
+    /* Map and Sidebar Grid */
+    .map-sidebar-grid {
+      display: grid;
+      grid-template-columns: 60% 40%;
+      gap: 24px;
+      min-height: 500px;
+    }
+    @media (max-width: 992px) {
+      .map-sidebar-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Leaflet map container */
+    #tunisia-map {
+      height: 500px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      z-index: 1; /* prevent overriding navbar */
+    }
+
+    /* Sidebar Mini-table */
+    .sidebar-card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+    .mini-table-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .mini-table-row:last-child {
+      border-bottom: none;
+    }
+    .rank-badge {
+      width: 24px;
+      height: 24px;
+      background: var(--border);
+      color: var(--text-secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .city-info {
+      flex: 1;
+    }
+    .city-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .city-stats {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .temp-large {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    /* Chart container */
+    .chart-container {
+      width: 100%;
+      height: 400px;
+    }
+
+    /* Map Markers */
+    .map-marker {
+      width: 36px; height: 36px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 11px; color: white;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    .map-marker span {
+      transform: rotate(45deg);
+      display: block;
+    }
+
+    /* Map Popup Customization */
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      border-radius: 12px;
+    }
+    .leaflet-popup-tip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+    .leaflet-container a.leaflet-popup-close-button {
+      color: var(--text-muted);
+    }
+    .popup-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--accent-cyan);
+    }
+    .popup-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .popup-stat {
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+    .popup-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: var(--border);
+      color: var(--text-primary);
+      text-decoration: none;
+      padding: 8px;
+      border-radius: 6px;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .popup-btn:hover {
+      background: var(--accent-cyan);
+      color: #0D1B2A;
+    }
+  </style>
 </head>
 <body>
   <video id="bg-video" autoplay muted loop class="video-bg">
@@ -21,7 +197,51 @@
       <h1 class="page-title">Dashboard</h1>
       <p class="page-subtitle">Overview of national meteorological data.</p>
     </div>
-    <!-- TODO: Implement dashboard content -->
+
+    <div class="dashboard-layout">
+      <!-- Active Alerts Strip -->
+      <div id="alert-container"></div>
+
+      <!-- KPI Cards -->
+      <div class="grid-4">
+        <div class="kpi-card">
+          <div class="kpi-value" id="kpi-avg-temp">--°C</div>
+          <div class="kpi-label">🌡 Temp. Nationale</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" id="kpi-hottest-temp">--°C</div>
+          <div class="kpi-label" id="kpi-hottest-city">🔥 Ville la + Chaude</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" id="kpi-coldest-temp">--°C</div>
+          <div class="kpi-label" id="kpi-coldest-city">❄ Ville la + Froide</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" id="kpi-humidity">--%</div>
+          <div class="kpi-label">💧 Humidité Moy.</div>
+        </div>
+      </div>
+
+      <!-- Map and Sidebar -->
+      <div class="map-sidebar-grid">
+        <div id="tunisia-map"></div>
+
+        <div class="card sidebar-card">
+          <div class="sidebar-title">🔥 Top 5 Villes les Plus Chaudes</div>
+          <div id="hottest-cities-list">
+            <!-- Populated via JS -->
+            <div style="text-align: center; color: var(--text-muted); margin-top: 20px;">Chargement...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plotly Chart -->
+      <div class="card">
+        <div class="sidebar-title">📈 Tendance des Températures Moyennes (Mois)</div>
+        <div id="trend-chart" class="chart-container plotly-chart"></div>
+      </div>
+
+    </div>
   </main>
 
   <script src="/frontend/assets/js/api.js"></script>
@@ -29,6 +249,16 @@
   <script src="/frontend/assets/js/theme.js"></script>
   <script src="/frontend/assets/js/video-bg.js"></script>
   <script>
+    let map = null;
+    let markersLayer = null;
+    let currentTileLayer = null;
+
+    // Map themes
+    const MAP_TILES = {
+      dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    };
+
     async function loadNavbar() {
       const res = await fetch('/frontend/assets/components/navbar.html');
       const html = await res.text();
@@ -37,11 +267,251 @@
       document.querySelector(`a[href="${page}"]`)?.classList.add('active');
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
+    // Number animation with ease-out
+    function animateValue(obj, start, end, duration, suffix = '') {
+      if (!obj) return;
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        // easeOutQuad
+        const easeOut = 1 - (1 - progress) * (1 - progress);
+        const current = start + easeOut * (end - start);
+
+        obj.innerHTML = current.toFixed(1) + suffix;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    function renderKPIs(summary) {
+      if (!summary) return;
+
+      const avgTempEl = document.getElementById('kpi-avg-temp');
+      const hottestTempEl = document.getElementById('kpi-hottest-temp');
+      const coldestTempEl = document.getElementById('kpi-coldest-temp');
+      const humidityEl = document.getElementById('kpi-humidity');
+
+      if (summary.avg_temp_national !== undefined) animateValue(avgTempEl, 0, summary.avg_temp_national, 1000, '°C');
+      if (summary.max_temp !== undefined) animateValue(hottestTempEl, 0, summary.max_temp, 1000, '°C');
+      if (summary.min_temp !== undefined) animateValue(coldestTempEl, 0, summary.min_temp, 1000, '°C');
+      if (summary.avg_humidity !== undefined) animateValue(humidityEl, 0, summary.avg_humidity, 1000, '%');
+
+      if (summary.hottest_city) document.getElementById('kpi-hottest-city').innerText = `🔥 ${summary.hottest_city}`;
+      if (summary.coldest_city) document.getElementById('kpi-coldest-city').innerText = `❄ ${summary.coldest_city}`;
+    }
+
+    function renderAlerts(alerts) {
+      const container = document.getElementById('alert-container');
+      container.innerHTML = '';
+      if (!alerts || alerts.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+
+      alerts.forEach((alert, index) => {
+        const strip = document.createElement('div');
+        strip.className = 'alert-strip';
+        strip.innerHTML = `
+          <div>
+            <strong>⚠ ALERTE ACTIVE:</strong> ${alert.alert_type || 'ALERTE'} à ${alert.city || 'Nationale'} — ${alert.severity || 'Modérée'}
+          </div>
+          <button class="alert-dismiss" onclick="this.parentElement.remove()">✕</button>
+        `;
+        container.appendChild(strip);
+      });
+    }
+
+    function getTempColor(temp) {
+      if (temp < 10) return '#00D4FF';
+      if (temp < 20) return '#00B4A6';
+      if (temp < 30) return '#FFB800';
+      if (temp < 40) return '#FF4757';
+      return '#C44DFF';
+    }
+
+    function initMap(currentData) {
+      if (!currentData || currentData.length === 0) return;
+
+      map = L.map('tunisia-map').setView([33.8869, 9.5375], 6);
+
+      // Prevent zooming out too far
+      map.setMinZoom(5);
+      map.setMaxZoom(10);
+
+      const theme = localStorage.getItem('meteo_theme') || 'dark';
+      currentTileLayer = L.tileLayer(MAP_TILES[theme], {
+        attribution: '© OpenStreetMap contributors, © CARTO'
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+      updateMapMarkers(currentData);
+    }
+
+    function updateMapMarkers(data) {
+      if (!markersLayer) return;
+      markersLayer.clearLayers();
+
+      data.forEach(city => {
+        if (!city.lat || !city.lon) return;
+
+        const temp = city.temperature || 0;
+        const color = getTempColor(temp);
+
+        const icon = L.divIcon({
+          className: 'custom-div-icon',
+          html: `<div class="map-marker" style="background:${color}"><span>${temp.toFixed(0)}°</span></div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 36],
+          popupAnchor: [0, -36]
+        });
+
+        const marker = L.marker([city.lat, city.lon], { icon }).addTo(markersLayer);
+
+        const weatherDesc = city.weather_description || 'Inconnu';
+        const feelsLike = city.feels_like || temp;
+        const humidity = city.humidity || 0;
+        const wind = city.wind_speed || 0;
+
+        const popupContent = `
+          <div class="popup-title">${city.city}</div>
+          <div class="popup-subtitle">${city.governorate || ''} | ${city.region || ''}</div>
+          <div class="popup-stat">🌡 Temp: <strong>${temp.toFixed(1)}°C</strong> (ressenti ${feelsLike.toFixed(1)}°C)</div>
+          <div class="popup-stat">💧 Humidité: ${humidity}%</div>
+          <div class="popup-stat">💨 Vent: ${wind.toFixed(1)} km/h</div>
+          <div class="popup-stat">🌤 ${weatherDesc}</div>
+          <a href="/frontend/forecast.html?city=${encodeURIComponent(city.city)}" class="popup-btn">Voir prévisions →</a>
+        `;
+
+        marker.bindPopup(popupContent);
+      });
+    }
+
+    function renderSidebar(currentData) {
+      const container = document.getElementById('hottest-cities-list');
+      if (!currentData || currentData.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color: var(--text-muted); margin-top:20px;">Données indisponibles</div>';
+        return;
+      }
+
+      // Sort by temperature desc
+      const sorted = [...currentData].sort((a, b) => (b.temperature || 0) - (a.temperature || 0));
+      const top5 = sorted.slice(0, 5);
+
+      container.innerHTML = '';
+      top5.forEach((city, index) => {
+        const weatherDesc = city.weather_description || 'Inconnu';
+        container.innerHTML += `
+          <div class="mini-table-row">
+            <div class="rank-badge">${index + 1}</div>
+            <div class="city-info">
+              <div class="city-name">${city.city}</div>
+              <div class="city-stats">${weatherDesc} • Vent: ${(city.wind_speed || 0).toFixed(1)} km/h</div>
+            </div>
+            <div class="temp-large">${(city.temperature || 0).toFixed(1)}°</div>
+          </div>
+        `;
+      });
+    }
+
+    function renderTrendChart(monthlyData) {
+      if (!monthlyData || monthlyData.length === 0) return;
+      // Depending on API structure, assuming monthlyData is an array of objects
+      // like: { year: 2023, month: 1, avg_temp: 15.2 }
+
+      const theme = localStorage.getItem('meteo_theme') || 'dark';
+      const fontColor = theme === 'dark' ? '#E8F4FD' : '#0D1B2A';
+
+      // Group by year
+      const yearsData = {};
+      monthlyData.forEach(d => {
+        if (!yearsData[d.year]) {
+          yearsData[d.year] = { x: [], y: [], type: 'scatter', mode: 'lines+markers', name: d.year, line: {shape: 'spline'} };
+        }
+        yearsData[d.year].x.push(d.month);
+        yearsData[d.year].y.push(d.avg_temp);
+      });
+
+      const traces = Object.values(yearsData);
+
+      const layout = {
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        font: { color: fontColor },
+        xaxis: { title: 'Mois', tickmode: 'array', tickvals: [1,2,3,4,5,6,7,8,9,10,11,12], ticktext: ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'], gridcolor: 'rgba(128,128,128,0.2)' },
+        yaxis: { title: 'Température Moyenne (°C)', gridcolor: 'rgba(128,128,128,0.2)' },
+        margin: { t: 20, r: 20, l: 50, b: 50 },
+        hovermode: 'x unified'
+      };
+
+      Plotly.newPlot('trend-chart', traces, layout, {responsive: true});
+    }
+
+    function setVideoBackground(currentData) {
+      if (!currentData?.length) return;
+      const validCodes = currentData.filter(c => c.weather_code !== undefined && c.weather_code !== null);
+      if (validCodes.length === 0) {
+        VideoBg.setFromTime();
+        return;
+      }
+      const avgCode = Math.round(
+        validCodes.reduce((s, c) => s + c.weather_code, 0) / validCodes.length
+      );
+      VideoBg.setFromWeatherCode(avgCode);
+    }
+
+    async function initDashboard() {
       Auth.requireAuth();
-      await loadNavbar();
       Theme.init();
-      VideoBg.setFromTime();
+
+      // Parallel fetches with catch to handle empty API data gracefully
+      const [summary, current, monthly, alerts] = await Promise.all([
+        API.getDashboardSummary().catch(() => null),
+        API.getCurrentAll().catch(() => []),
+        API.getMonthly().catch(() => []),
+        API.getActiveAlerts().catch(() => []),
+      ]);
+
+      renderKPIs(summary || { avg_temp_national: 0, max_temp: 0, min_temp: 0, avg_humidity: 0 });
+      renderAlerts(alerts);
+      initMap(current);
+      renderSidebar(current);
+      renderTrendChart(monthly);
+
+      setVideoBackground(current);
+
+      // Auto-refresh current conditions every 15 min
+      setInterval(async () => {
+        try {
+          const fresh = await API.getCurrentAll();
+          if (fresh && fresh.length > 0) {
+            updateMapMarkers(fresh);
+            renderSidebar(fresh);
+            setVideoBackground(fresh);
+          }
+        } catch(err) {
+          console.error("Auto-refresh failed:", err);
+        }
+      }, 15 * 60 * 1000);
+    }
+
+    // Listen for theme change to swap map tiles
+    document.addEventListener('themeChanged', (e) => {
+      const theme = e.detail.theme;
+      if (map && currentTileLayer) {
+        map.removeLayer(currentTileLayer);
+        currentTileLayer = L.tileLayer(MAP_TILES[theme], {
+          attribution: '© OpenStreetMap contributors, © CARTO'
+        }).addTo(map);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadNavbar();
+      initDashboard();
     });
   </script>
 </body>
