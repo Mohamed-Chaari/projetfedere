@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Tunisia Meteo</title>
+  <link rel="stylesheet" href="/frontend/assets/css/theme.css">
+  <link rel="stylesheet" href="/frontend/assets/css/layout.css">
+
+  <style>
+    /* Pre-auth specific styles */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      position: relative;
+    }
+
+    .theme-toggle-container {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      z-index: 10;
+    }
+
+    .login-card {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      z-index: 10;
+    }
+
+    .login-header {
+      margin-bottom: 32px;
+    }
+
+    .login-logo {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .login-tagline {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .form-control {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 10px;
+      padding: 14px 16px 14px 44px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
+    .pwd-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 1.1rem;
+    }
+
+    .login-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #00D4FF, #2D8CFF);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      margin-top: 8px;
+    }
+
+    .login-btn:hover {
+      opacity: 0.9;
+    }
+
+    .login-btn:active {
+      transform: scale(0.98);
+    }
+
+    .error-msg {
+      display: none;
+      background: rgba(255, 71, 87, 0.1);
+      color: var(--accent-red);
+      border: 1px solid rgba(255, 71, 87, 0.3);
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    .login-footer {
+      margin-top: 32px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Shake animation */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+<body>
+  <video id="bg-video" autoplay muted loop class="video-bg">
+    <source src="/frontend/assets/videos/cloudy.mp4" type="video/mp4">
+  </video>
+  <div class="video-overlay"></div>
+
+  <div class="theme-toggle-container">
+    <button class="theme-toggle" aria-label="Toggle theme"></button>
+  </div>
+
+  <div class="login-card" id="login-form-container">
+    <div class="login-header">
+      <div class="login-logo">🌤 Tunisia Meteo</div>
+      <div class="login-subtitle">Système National d'Analyse Météorologique</div>
+      <div class="login-tagline">221 villes • 24 gouvernorats • Données temps réel</div>
+    </div>
+
+    <form id="login-form">
+      <div class="input-group">
+        <span class="input-icon">👤</span>
+        <input type="text" id="username" class="form-control" placeholder="Nom d'utilisateur" required>
+      </div>
+      <div class="input-group">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password" class="form-control" placeholder="Mot de passe" required>
+        <button type="button" class="pwd-toggle" id="toggle-pwd" aria-label="Afficher/Masquer">👁️</button>
+      </div>
+      <button type="submit" class="login-btn" id="login-btn">Se connecter</button>
+      <div id="error-msg" class="error-msg"></div>
+    </form>
+
+    <div class="login-footer">
+      ISIMS Sfax • Projet TD5 • 2025-2026
+    </div>
+  </div>
+
+  <script src="/frontend/assets/js/api.js"></script>
+  <script src="/frontend/assets/js/auth.js"></script>
+  <script src="/frontend/assets/js/theme.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Theme.init();
+
+      // If already logged in → redirect
+      if (Auth.isLoggedIn()) {
+        window.location.href = '/frontend/dashboard.html';
+        return;
+      }
+
+      const form = document.getElementById('login-form');
+      const container = document.getElementById('login-form-container');
+      const errorDiv = document.getElementById('error-msg');
+      const btn = document.getElementById('login-btn');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        btn.textContent = 'Connexion...';
+        btn.disabled = true;
+        errorDiv.style.display = 'none';
+
+        try {
+          const data = await API.login(username, password);
+          Auth.setToken(data.access_token);
+          localStorage.setItem('meteo_user', username);
+          window.location.href = '/frontend/dashboard.html';
+        } catch (err) {
+          errorDiv.textContent = '❌ Identifiants incorrects. Réessayez.';
+          errorDiv.style.display = 'block';
+          btn.textContent = 'Se connecter';
+          btn.disabled = false;
+          // Shake animation on error
+          container.classList.add('shake');
+          setTimeout(() => container.classList.remove('shake'), 500);
+        }
+      });
+
+      // Show/hide password
+      document.getElementById('toggle-pwd')
+        ?.addEventListener('click', () => {
+          const pwd = document.getElementById('password');
+          pwd.type = pwd.type === 'password' ? 'text' : 'password';
+        });
+    });
+  </script>
+</body>
+</html>
