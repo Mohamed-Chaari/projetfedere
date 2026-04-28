@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ocean Weather Premium</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <video id="bgVideo" autoplay muted loop playsinline>
+        <source id="videoSource" src="frontend/video/sea-sunny.mp4" type="video/mp4">
+      </video>
+
+      <div class="overlay"></div>
+      <div class="night-glow" id="nightGlow"></div>
+      <div class="rain-layer" id="rainLayer"></div>
+
+      <div class="hero-content">
+        <div class="topbar">
+          <div class="brand-wrap">
+            <div class="brand">Ocean Weather Premium</div>
+            <div class="auto-info" id="autoInfo">Auto mode based on local time + weather condition</div>
+          </div>
+
+          <div class="chips">
+            <button class="chip active" data-theme="auto">Auto</button>
+            <button class="chip" data-theme="sunny">Sunny</button>
+            <button class="chip" data-theme="cloudy">Cloudy</button>
+            <button class="chip" data-theme="rain">Rain</button>
+            <button class="chip" data-theme="night">Night</button>
+            <button class="chip" data-theme="storm">Storm</button>
+          </div>
+        </div>
+
+        <div class="main-card">
+          <div class="left-card glass">
+            <div class="location">
+              <div class="pin">📍</div>
+              <div>
+                <div class="city" id="cityName">Sfax</div>
+                <div class="time" id="todayDate">Loading local time...</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="temp-block">
+                <h1 id="currentTemp">18°</h1>
+              </div>
+
+              <div class="condition" id="currentCondition">Rain Showers</div>
+
+              <div class="range">
+                <span id="highLow">↑ 19° / ↓ 12°</span>
+                <span id="feelsLike">Feels like 17°</span>
+              </div>
+            </div>
+
+            <div class="summary" id="weatherSummary">
+              Ocean cinematic background changes automatically depending on weather and local time.
+            </div>
+          </div>
+
+          <div class="right-card glass">
+            <div>
+              <div class="section-title">Hourly forecast</div>
+              <div class="hourly" id="hourlyForecast"></div>
+            </div>
+
+            <div class="hero-side-box">
+              <div class="small-title">Air quality</div>
+              <div class="hero-big" id="aqiHero">Good (41)</div>
+              <div class="hero-label">Clean atmosphere and a premium seaside mood through the day.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-cue">
+          <span>Scroll for details</span>
+          <div class="scroll-line"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="details">
+      <div class="stats">
+        <div class="stat-card glass reveal-item">
+          <div class="stat-title">Humidity</div>
+          <div class="stat-value" id="humidityVal">39%</div>
+          <div class="stat-label">Similar to yesterday</div>
+          <div class="bar"><span id="humidityBar" style="width:39%"></span></div>
+        </div>
+
+        <div class="stat-card glass reveal-item">
+          <div class="stat-title">Wind</div>
+          <div class="stat-value" id="windVal">28 km/h</div>
+          <div class="stat-label" id="windLabel">It's breezy</div>
+        </div>
+
+        <div class="stat-card glass reveal-item">
+          <div class="stat-title">Visibility</div>
+          <div class="stat-value" id="visibilityVal">10 km</div>
+          <div class="stat-label">Good right now</div>
+        </div>
+
+        <div class="stat-card glass reveal-item">
+          <div class="stat-title">Pressure</div>
+          <div class="stat-value" id="pressureVal">1013 mb</div>
+          <div class="stat-label">Currently rising rapidly</div>
+        </div>
+      </div>
+
+      <div class="forecast glass reveal-item">
+        <div class="section-title">7-day forecast</div>
+        <div class="forecast-list" id="dailyForecast"></div>
+      </div>
+
+      <div class="extras-grid">
+        <div class="extra-card glass reveal-item">
+          <div class="section-title">Sunrise & Sunset</div>
+
+          <div class="sun-row">
+            <div class="sun-item">
+              <span>Sunrise</span>
+              <strong id="sunriseTime">06:01</strong>
+            </div>
+
+            <div class="sun-item">
+              <span>Sunset</span>
+              <strong id="sunsetTime">18:40</strong>
+            </div>
+
+            <div class="sun-note">
+              Golden light over the ocean creates a cinematic luxury atmosphere before gently switching into the night mood.
+            </div>
+          </div>
+        </div>
+
+        <div class="extra-card glass reveal-item">
+          <div class="section-title">Ocean Mood</div>
+
+          <div class="mood-grid">
+            <div class="mood-box">
+              <div class="stat-title">UV Index</div>
+              <div class="stat-value" id="uvVal" style="font-size:42px;">5.4</div>
+              <div class="stat-label">Moderate</div>
+            </div>
+
+            <div class="mood-box">
+              <div class="stat-title">Sea Mood</div>
+              <div class="stat-value" id="seaMood" style="font-size:32px;">Gentle</div>
+              <div class="stat-label">Soft moving waves</div>
+            </div>
+
+            <div class="mood-box" style="grid-column: 1 / -1;">
+              <div class="stat-title">Air quality</div>
+              <div class="stat-value" id="aqiVal" style="font-size:38px;">Good (41)</div>
+              <div class="stat-label">Clean atmosphere for a comfortable seaside day.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-card glass reveal-item">
+        <div class="section-title">Hourly wave of the day</div>
+        <div class="timeline-grid" id="timelineCards"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const weatherData = {
+      city: "Sfax",
+      timezone: "Africa/Tunis",
+
+      condition: "rain", // sunny | cloudy | rain | night | storm
+      conditionLabel: "Rain Showers",
+
+      temp: 18,
+      high: 19,
+      low: 12,
+      feelsLike: 17,
+      summary: "Ocean cinematic background changes automatically depending on weather and local time.",
+
+      humidity: 39,
+      wind: 28,
+      windLabel: "It's breezy",
+      visibility: 10,
+      pressure: 1013,
+
+      sunrise: "06:01",
+      sunset: "18:40",
+      uv: 5.4,
+      seaMood: "Gentle",
+      aqi: "Good (41)",
+
+      hourly: [
+        { time: "12:00", icon: "🌧️", temp: 18 },
+        { time: "13:00", icon: "🌧️", temp: 18 },
+        { time: "14:00", icon: "☁️", temp: 19 },
+        { time: "15:00", icon: "☁️", temp: 19 },
+        { time: "16:00", icon: "🌦️", temp: 18 },
+        { time: "17:00", icon: "☁️", temp: 17 }
+      ],
+
+      daily: [
+        { day: "Today", icon: "🌧️", desc: "Rain showers", hi: 19, lo: 12 },
+        { day: "Sat", icon: "🌦️", desc: "Light rain", hi: 21, lo: 10 },
+        { day: "Sun", icon: "☀️", desc: "Sunny day", hi: 21, lo: 10 },
+        { day: "Mon", icon: "☀️", desc: "Clear sky", hi: 22, lo: 11 },
+        { day: "Tue", icon: "🌤️", desc: "Warm and bright", hi: 24, lo: 13 },
+        { day: "Wed", icon: "☁️", desc: "Cloudy", hi: 22, lo: 14 },
+        { day: "Thu", icon: "⛈️", desc: "Stormy", hi: 20, lo: 11 }
+      ],
+
+      timeline: [
+        {
+          title: "Early morning",
+          text: "Soft breeze, calm water reflections, and fresh light over the sea.",
+          icon: "🌅"
+        },
+        {
+          title: "Midday",
+          text: "Higher brightness and stronger ocean contrast with rich cinematic tones.",
+          icon: "☀️"
+        },
+        {
+          title: "Sunset",
+          text: "Warm orange glow spreads across the horizon and the glass cards become richer.",
+          icon: "🌇"
+        },
+        {
+          title: "Night",
+          text: "Deep blue mood, softer highlights, and an elegant premium atmosphere.",
+          icon: "🌙"
+        }
+      ],
+
+      videos: {
+        sunny: "frontend/video/sea-sunny.mp4",
+        cloudy: "frontend/video/sea-cloudy.mp4",
+        rain: "frontend/video/sea-rain.mp4",
+        night: "frontend/video/sea-night.mp4",
+        storm: "frontend/video/sea-storm.mp4"
+      }
+    };
+
+    const bgVideo = document.getElementById("bgVideo");
+    const videoSource = document.getElementById("videoSource");
+    const rainLayer = document.getElementById("rainLayer");
+    const chips = document.querySelectorAll(".chip");
+    const nightGlow = document.getElementById("nightGlow");
+
+    let autoMode = true;
+
+    function updateDateTime() {
+      const formatter = new Intl.DateTimeFormat("en-GB", {
+        weekday: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: weatherData.timezone
+      });
+
+      document.getElementById("todayDate").textContent = formatter.format(new Date());
+    }
+
+    function getLocalHour() {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        hour12: false,
+        timeZone: weatherData.timezone
+      }).formatToParts(new Date());
+
+      return parseInt(parts.find(p => p.type === "hour").value, 10);
+    }
+
+    function isNightHour(hour) {
+      return hour >= 19 || hour < 6;
+    }
+
+    function resolveAutoCondition() {
+      const hour = getLocalHour();
+
+      if (isNightHour(hour)) {
+        if (weatherData.condition === "sunny" || weatherData.condition === "cloudy") {
+          return "night";
+        }
+        if (weatherData.condition === "rain") {
+          return "rain";
+        }
+        if (weatherData.condition === "storm") {
+          return "storm";
+        }
+      }
+
+      return weatherData.condition;
+    }
+
+    function renderHourly() {
+      const container = document.getElementById("hourlyForecast");
+      container.innerHTML = weatherData.hourly.map(item => `
+        <div class="hour-item">
+          <div class="t">${item.time}</div>
+          <div class="i">${item.icon}</div>
+          <div class="v">${item.temp}°</div>
+        </div>
+      `).join("");
+    }
+
+    function renderDaily() {
+      const container = document.getElementById("dailyForecast");
+      container.innerHTML = weatherData.daily.map(item => `
+        <div class="forecast-row">
+          <div class="day">${item.day}</div>
+          <div class="icon">${item.icon}</div>
+          <div class="desc">${item.desc}</div>
+          <div class="tempv">${item.hi}° / ${item.lo}°</div>
+        </div>
+      `).join("");
+    }
+
+    function renderTimeline() {
+      const container = document.getElementById("timelineCards");
+      container.innerHTML = weatherData.timeline.map(item => `
+        <div class="timeline-item">
+          <div class="timeline-icon">${item.icon}</div>
+          <div class="timeline-title">${item.title}</div>
+          <div class="timeline-text">${item.text}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderMainData() {
+      document.getElementById("cityName").textContent = weatherData.city;
+      document.getElementById("currentTemp").textContent = weatherData.temp + "°";
+      document.getElementById("currentCondition").textContent = weatherData.conditionLabel;
+      document.getElementById("highLow").textContent = `↑ ${weatherData.high}° / ↓ ${weatherData.low}°`;
+      document.getElementById("feelsLike").textContent = `Feels like ${weatherData.feelsLike}°`;
+      document.getElementById("weatherSummary").textContent = weatherData.summary;
+
+      document.getElementById("humidityVal").textContent = weatherData.humidity + "%";
+      document.getElementById("humidityBar").style.width = weatherData.humidity + "%";
+
+      document.getElementById("windVal").textContent = weatherData.wind + " km/h";
+      document.getElementById("windLabel").textContent = weatherData.windLabel;
+
+      document.getElementById("visibilityVal").textContent = weatherData.visibility + " km";
+      document.getElementById("pressureVal").textContent = weatherData.pressure + " mb";
+
+      document.getElementById("sunriseTime").textContent = weatherData.sunrise;
+      document.getElementById("sunsetTime").textContent = weatherData.sunset;
+
+      document.getElementById("uvVal").textContent = weatherData.uv;
+      document.getElementById("seaMood").textContent = weatherData.seaMood;
+      document.getElementById("aqiVal").textContent = weatherData.aqi;
+      document.getElementById("aqiHero").textContent = weatherData.aqi;
+    }
+
+    function createRainDrops(scene) {
+      rainLayer.innerHTML = "";
+
+      if (scene !== "rain" && scene !== "storm") return;
+
+      const count = scene === "storm" ? 120 : 90;
+
+      for (let i = 0; i < count; i++) {
+        const drop = document.createElement("div");
+        drop.className = "drop";
+        drop.style.left = Math.random() * 100 + "%";
+        drop.style.top = (-50 - Math.random() * 160) + "px";
+        drop.style.animationDuration = (0.55 + Math.random() * 0.8) + "s";
+        drop.style.animationDelay = (Math.random() * 2) + "s";
+        drop.style.opacity = (0.3 + Math.random() * 0.6).toFixed(2);
+        rainLayer.appendChild(drop);
+      }
+    }
+
+    function setNightGlow(scene) {
+      const hour = getLocalHour();
+      const night = isNightHour(hour) || scene === "night";
+      nightGlow.style.opacity = night ? "1" : "0";
+    }
+
+    function setScene(condition, useAuto = true) {
+      const effectiveCondition = useAuto ? resolveAutoCondition() : condition;
+      const file = weatherData.videos[effectiveCondition] || weatherData.videos.sunny;
+
+      if (videoSource.getAttribute("src") !== file) {
+        videoSource.setAttribute("src", file);
+        bgVideo.load();
+        bgVideo.play().catch(() => {});
+      }
+
+      createRainDrops(effectiveCondition);
+      setNightGlow(effectiveCondition);
+
+      chips.forEach(btn => {
+        btn.classList.toggle(
+          "active",
+          (useAuto && btn.dataset.theme === "auto") ||
+          (!useAuto && btn.dataset.theme === condition)
+        );
+      });
+
+      const hour = getLocalHour();
+      document.getElementById("autoInfo").textContent = useAuto
+        ? `Auto mode • ${effectiveCondition} • ${hour}:00 local time`
+        : `Manual mode • ${condition}`;
+    }
+
+    chips.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const theme = btn.dataset.theme;
+
+        if (theme === "auto") {
+          autoMode = true;
+          setScene(weatherData.condition, true);
+          return;
+        }
+
+        autoMode = false;
+        weatherData.condition = theme;
+        weatherData.conditionLabel = theme.charAt(0).toUpperCase() + theme.slice(1);
+        document.getElementById("currentCondition").textContent = weatherData.conditionLabel;
+        setScene(weatherData.condition, false);
+      });
+    });
+
+    const revealItems = document.querySelectorAll(".reveal-item");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealItems.forEach(item => observer.observe(item));
+
+    renderMainData();
+    renderHourly();
+    renderDaily();
+    renderTimeline();
+    updateDateTime();
+    setScene(weatherData.condition, true);
+
+    setInterval(() => {
+      updateDateTime();
+      if (autoMode) {
+        setScene(weatherData.condition, true);
+      }
+    }, 60000);
+    // Remplace ton setInterval final par cette logique :
+async function refreshWeather() {
+    try {
+        // L'URL de ton API FastAPI (ajuste l'endpoint si besoin)
+        const response = await fetch("http://localhost:8000/weather/latest/Sfax");
+        const freshData = await response.json();
+
+        // On met à jour l'objet weatherData avec les vraies valeurs du backend
+        weatherData.temp = Math.round(freshData.temperature);
+        weatherData.humidity = freshData.humidity;
+        weatherData.pressure = freshData.pressure;
+        weatherData.condition = freshData.condition.toLowerCase(); // ex: 'rain'
+        weatherData.conditionLabel = freshData.condition;
+
+        // On relance le rendu visuel
+        renderMainData();
+        if (autoMode) {
+            setScene(weatherData.condition, true);
+        }
+    } catch (err) {
+        console.error("Le backend ne répond pas, affichage des données démo.", err);
+    }
+}
+
+// Rafraîchir toutes le minutes
+setInterval(refreshWeather, 60000);
+refreshWeather(); // Premier appel immédiat
+
+    // Later with JSON:
+    // fetch("weather.json")
+    //   .then(res => res.json())
+    //   .then(data => {
+    //     Object.assign(weatherData, data);
+    //     renderMainData();
+    //     renderHourly();
+    //     renderDaily();
+    //     renderTimeline();
+    //     updateDateTime();
+    //     setScene(weatherData.condition, autoMode);
+    //   });
+  </script>
+</body>
+</html>
