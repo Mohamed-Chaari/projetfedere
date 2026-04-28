@@ -3,10 +3,141 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Forecast - Tunisia Meteo</title>
+  <title>Prévisions - Tunisia Meteo</title>
   <link rel="stylesheet" href="/frontend/assets/css/theme.css">
   <link rel="stylesheet" href="/frontend/assets/css/layout.css">
   <link rel="stylesheet" href="/frontend/assets/css/components.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <style>
+    /* City Selector Autocomplete */
+    .search-container {
+      position: relative;
+      max-width: 500px;
+      margin: 0 auto 32px auto;
+    }
+    .search-input {
+      width: 100%;
+      padding: 16px 20px;
+      font-size: 1.1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      backdrop-filter: blur(12px);
+      transition: all 0.2s;
+      box-shadow: var(--shadow);
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+    }
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-top: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+    .autocomplete-item {
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover, .autocomplete-item.active {
+      background: var(--bg-secondary);
+    }
+    .autocomplete-city {
+      font-weight: 600;
+      color: var(--text-primary);
+      display: block;
+    }
+    .autocomplete-gov {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* 7-Day Horizontal Cards */
+    .forecast-container {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      margin-bottom: 32px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--bg-primary);
+    }
+    .forecast-container::-webkit-scrollbar { height: 8px; }
+    .forecast-container::-webkit-scrollbar-track { background: transparent; }
+    .forecast-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .day-card {
+      min-width: 130px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .day-card:hover { transform: translateY(-4px); }
+    .day-card.today {
+      border: 2px solid var(--accent-cyan);
+      background: linear-gradient(180deg, var(--bg-card) 0%, rgba(0, 212, 255, 0.05) 100%);
+    }
+
+    .day-name { font-weight: 700; font-size: 1.1rem; color: var(--text-primary); }
+    .day-date { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+    .day-icon { font-size: 2.5rem; margin-bottom: 12px; line-height: 1; }
+    .day-temp { font-weight: 700; margin-bottom: 12px; font-size: 1.05rem; }
+    .temp-max { color: var(--accent-red); }
+    .temp-min { color: var(--accent-blue); margin-left: 6px; }
+    .day-stat { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px; }
+
+    /* Charts Layout */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .chart-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .chart-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+    .plotly-container {
+      width: 100%;
+      height: 400px;
+    }
+
+    /* Loading and Empty States */
+    #loading-indicator { display: none; text-align: center; padding: 40px; color: var(--text-muted); }
+    #empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 1.1rem; }
+    #content-wrapper { display: none; }
+  </style>
 </head>
 <body>
   <video id="bg-video" autoplay muted loop class="video-bg">
@@ -17,18 +148,72 @@
   <div id="navbar-placeholder"></div>
 
   <main class="main-content">
-    <div class="page-header">
-      <h1 class="page-title">Forecast</h1>
-      <p class="page-subtitle">7-day weather forecast.</p>
+    <div class="page-header" style="text-align: center;">
+      <h1 class="page-title">Prévisions Météorologiques</h1>
+      <p class="page-subtitle">Prévisions sur 7 jours par ville.</p>
     </div>
-    <!-- TODO: Implement forecast content -->
+
+    <!-- City Search -->
+    <div class="search-container">
+      <input type="text" id="city-input" class="search-input" placeholder="Rechercher une ville (ex: Tunis, Sfax)..." autocomplete="off">
+      <div id="autocomplete-list" class="autocomplete-list"></div>
+    </div>
+
+    <div id="loading-indicator">
+      <div class="spinner"></div>
+      <div>Chargement des prévisions...</div>
+    </div>
+
+    <div id="empty-state">
+      Recherchez une ville pour afficher ses prévisions à 7 jours.
+    </div>
+
+    <div id="content-wrapper">
+      <!-- 7-Day Cards -->
+      <div class="forecast-container" id="forecast-cards">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="chart-box">
+          <div class="chart-title" id="main-chart-title">Températures et Probabilité de Précipitations</div>
+          <div id="main-chart" class="plotly-container"></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Précipitations Prévues (mm)</div>
+          <div id="precip-chart" class="plotly-container"></div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="/frontend/assets/js/api.js"></script>
   <script src="/frontend/assets/js/auth.js"></script>
   <script src="/frontend/assets/js/theme.js"></script>
   <script src="/frontend/assets/js/video-bg.js"></script>
+
   <script>
+    let citiesList = [];
+    let currentForecastData = [];
+
+    // WMO Weather Code to Emoji mapping
+    function getWeatherEmoji(code) {
+      if (code === undefined || code === null) return '☁️';
+      if (code <= 1) return '☀️';
+      if (code <= 3) return '⛅';
+      if (code >= 45 && code <= 48) return '🌫';
+      if (code >= 51 && code <= 67) return '🌧';
+      if (code >= 71 && code <= 77) return '❄️';
+      if (code >= 80 && code <= 82) return '🌦';
+      if (code >= 95) return '⛈';
+      return '☁️';
+    }
+
+    const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
     async function loadNavbar() {
       const res = await fetch('/frontend/assets/components/navbar.html');
       const html = await res.text();
@@ -37,11 +222,275 @@
       document.querySelector(`a[href="${page}"]`)?.classList.add('active');
     }
 
+    async function fetchCities() {
+      try {
+        const data = await API.getCurrentAll();
+        if (data && data.length) {
+          // unique cities
+          citiesList = data.map(c => ({ city: c.city, gov: c.governorate })).filter(Boolean);
+        }
+      } catch (err) {
+        console.error("Failed to load cities for autocomplete", err);
+      }
+    }
+
+    function setupAutocomplete() {
+      const input = document.getElementById('city-input');
+      const list = document.getElementById('autocomplete-list');
+      let currentFocus = -1;
+
+      input.addEventListener('input', function() {
+        const val = this.value;
+        list.innerHTML = '';
+        if (!val) { list.style.display = 'none'; return; }
+
+        currentFocus = -1;
+        const matches = citiesList.filter(c => c.city.toLowerCase().includes(val.toLowerCase()));
+
+        if (matches.length === 0) { list.style.display = 'none'; return; }
+        list.style.display = 'block';
+
+        matches.forEach(match => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-item';
+          div.innerHTML = `<span class="autocomplete-city">${match.city}</span><span class="autocomplete-gov">${match.gov || ''}</span>`;
+          div.addEventListener('click', () => {
+            input.value = match.city;
+            list.style.display = 'none';
+            loadForecast(match.city);
+          });
+          list.appendChild(div);
+        });
+      });
+
+      input.addEventListener('keydown', function(e) {
+        let items = list.getElementsByClassName('autocomplete-item');
+        if (e.keyCode == 40) { // DOWN
+          currentFocus++;
+          addActive(items);
+        } else if (e.keyCode == 38) { // UP
+          currentFocus--;
+          addActive(items);
+        } else if (e.keyCode == 13) { // ENTER
+          e.preventDefault();
+          if (currentFocus > -1 && items) {
+            items[currentFocus].click();
+          } else if (items.length > 0) {
+            items[0].click();
+          }
+        }
+      });
+
+      function addActive(x) {
+        if (!x) return false;
+        removeActive(x);
+        if (currentFocus >= x.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (x.length - 1);
+        x[currentFocus].classList.add('active');
+        x[currentFocus].scrollIntoView({ block: 'nearest' });
+      }
+      function removeActive(x) {
+        for (let i = 0; i < x.length; i++) {
+          x[i].classList.remove('active');
+        }
+      }
+
+      document.addEventListener('click', function (e) {
+        if (e.target !== input && e.target !== list) {
+          list.style.display = 'none';
+        }
+      });
+    }
+
+    async function loadForecast(city) {
+      const input = document.getElementById('city-input');
+      const emptyState = document.getElementById('empty-state');
+      const loading = document.getElementById('loading-indicator');
+      const wrapper = document.getElementById('content-wrapper');
+
+      input.value = city;
+      emptyState.style.display = 'none';
+      wrapper.style.display = 'none';
+      loading.style.display = 'block';
+
+      try {
+        const data = await API.getForecastCity(city);
+        if (!data || data.length === 0) {
+          loading.style.display = 'none';
+          emptyState.style.display = 'block';
+          emptyState.innerText = `Aucune prévision trouvée pour ${city}.`;
+          return;
+        }
+
+        // Limit to 7 days, assuming API returns array sorted by date
+        currentForecastData = data.slice(0, 7);
+
+        renderForecastCards(currentForecastData);
+        renderForecastChart(currentForecastData);
+        renderPrecipChart(currentForecastData);
+
+        document.title = `Prévisions ${city} — Tunisia Meteo`;
+        document.getElementById('main-chart-title').innerText = `Températures et Prob. Précip. à ${city}`;
+
+        // Update URL state
+        const url = new URL(window.location);
+        url.searchParams.set('city', city);
+        window.history.pushState({}, '', url);
+
+        // Update Background video based on today's weather
+        if(currentForecastData[0]?.weather_code) {
+            VideoBg.setFromWeatherCode(currentForecastData[0].weather_code);
+        }
+
+        loading.style.display = 'none';
+        wrapper.style.display = 'block';
+
+      } catch (err) {
+        console.error("Error loading forecast", err);
+        loading.style.display = 'none';
+        emptyState.style.display = 'block';
+        emptyState.innerText = `Erreur lors du chargement des prévisions pour ${city}.`;
+      }
+    }
+
+    function renderForecastCards(data) {
+      const container = document.getElementById('forecast-cards');
+      container.innerHTML = '';
+
+      const today = new Date().setHours(0,0,0,0);
+
+      data.forEach((day, index) => {
+        const dateObj = new Date(day.timestamp || day.time);
+        const isToday = dateObj.setHours(0,0,0,0) === today || index === 0;
+        const dayStr = DAYS[dateObj.getDay()];
+        const dateStr = `${dateObj.getDate()} ${MONTHS[dateObj.getMonth()]}`;
+
+        const maxT = day.temperature_max !== undefined ? day.temperature_max.toFixed(0) : '--';
+        const minT = day.temperature_min !== undefined ? day.temperature_min.toFixed(0) : '--';
+        const pop = day.precipitation_probability !== undefined ? day.precipitation_probability.toFixed(0) : '0';
+        const wind = day.wind_speed !== undefined ? day.wind_speed.toFixed(0) : '0';
+
+        const card = document.createElement('div');
+        card.className = `day-card ${isToday ? 'today' : ''}`;
+        card.innerHTML = `
+          <div class="day-name">${dayStr}</div>
+          <div class="day-date">${dateStr}</div>
+          <div class="day-icon">${getWeatherEmoji(day.weather_code)}</div>
+          <div class="day-temp">
+            <span class="temp-max">${maxT}°</span> / <span class="temp-min">${minT}°</span>
+          </div>
+          <div class="day-stat">🌧 ${pop}%</div>
+          <div class="day-stat">💨 ${wind}km/h</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderForecastChart(data) {
+      const theme = localStorage.getItem('meteo_theme') || 'dark';
+      const fontColor = theme === 'dark' ? '#E8F4FD' : '#0D1B2A';
+
+      const xDates = data.map(d => {
+        const dt = new Date(d.timestamp || d.time);
+        return `${DAYS[dt.getDay()]} ${dt.getDate()}`;
+      });
+
+      const traceMax = {
+        x: xDates, y: data.map(d => d.temperature_max),
+        name: 'T. Max', type: 'scatter', mode: 'lines+markers',
+        line: { color: '#FF4757', width: 3, shape: 'spline' },
+        marker: { size: 8 }
+      };
+
+      const traceMin = {
+        x: xDates, y: data.map(d => d.temperature_min),
+        name: 'T. Min', type: 'scatter', mode: 'lines+markers',
+        line: { color: '#2D8CFF', width: 3, shape: 'spline' },
+        marker: { size: 8 }
+      };
+
+      const tracePop = {
+        x: xDates, y: data.map(d => d.precipitation_probability || 0),
+        name: 'Prob. Précip.', type: 'bar', yaxis: 'y2',
+        marker: { color: 'rgba(0, 212, 255, 0.3)', line: { color: '#00D4FF', width: 1 } }
+      };
+
+      const layout = {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        font: { color: fontColor },
+        hovermode: 'x unified',
+        margin: { t: 20, r: 60, l: 50, b: 40 },
+        legend: { orientation: 'h', y: -0.2 },
+        xaxis: { gridcolor: 'rgba(128,128,128,0.2)' },
+        yaxis: {
+          title: 'Température (°C)',
+          gridcolor: 'rgba(128,128,128,0.2)',
+          tickformat: '.0f'
+        },
+        yaxis2: {
+          title: 'Probabilité (%)',
+          overlaying: 'y', side: 'right',
+          range: [0, 100], showgrid: false
+        }
+      };
+
+      Plotly.newPlot('main-chart', [tracePop, traceMax, traceMin], layout, {responsive: true});
+    }
+
+    function renderPrecipChart(data) {
+      const theme = localStorage.getItem('meteo_theme') || 'dark';
+      const fontColor = theme === 'dark' ? '#E8F4FD' : '#0D1B2A';
+
+      const xDates = data.map(d => {
+        const dt = new Date(d.timestamp || d.time);
+        return `${DAYS[dt.getDay()]} ${dt.getDate()}`;
+      });
+      const yPrecip = data.map(d => d.precipitation || 0);
+
+      const trace = {
+        x: xDates, y: yPrecip,
+        type: 'bar',
+        marker: {
+          color: yPrecip,
+          colorscale: [[0, 'rgba(0,212,255,0.2)'], [1, '#1A5FA8']],
+          line: { color: '#00D4FF', width: 1 }
+        }
+      };
+
+      const layout = {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        font: { color: fontColor },
+        margin: { t: 20, r: 20, l: 50, b: 40 },
+        xaxis: { gridcolor: 'rgba(128,128,128,0.2)' },
+        yaxis: { title: 'Précipitations (mm)', gridcolor: 'rgba(128,128,128,0.2)' }
+      };
+
+      Plotly.newPlot('precip-chart', [trace], layout, {responsive: true});
+    }
+
+    // Handle theme toggle redrawing charts
+    document.addEventListener('themeChanged', () => {
+      if(currentForecastData.length > 0) {
+        renderForecastChart(currentForecastData);
+        renderPrecipChart(currentForecastData);
+      }
+    });
+
     document.addEventListener('DOMContentLoaded', async () => {
       Auth.requireAuth();
       await loadNavbar();
       Theme.init();
       VideoBg.setFromTime();
+
+      await fetchCities();
+      setupAutocomplete();
+
+      // Check URL param
+      const params = new URLSearchParams(window.location.search);
+      const city = params.get('city');
+      if (city) {
+        loadForecast(city);
+      }
     });
   </script>
 </body>
