@@ -1,5 +1,6 @@
 import os
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -12,10 +13,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
+    from api.database import health_check
+    if not health_check():
+        raise RuntimeError("Cannot connect to Supabase on startup")
+    logger.info("Tunisia Meteo API started — DB connected")
+    yield
+    # shutdown
+
 app = FastAPI(
     title="weather.tn API",
     description="National Weather Analytics System — 221 cities, 24 governorates",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
@@ -26,13 +38,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-async def startup():
-    from api.database import health_check
-    if not health_check():
-        raise RuntimeError("Cannot connect to Supabase on startup")
-    logger.info("Tunisia Meteo API started — DB connected")
 
 @app.get("/")
 def root():

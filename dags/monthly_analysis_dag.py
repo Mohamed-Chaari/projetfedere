@@ -1,7 +1,7 @@
 import sys
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
@@ -45,7 +45,7 @@ with DAG(
 
                 logger.info(f"Latest date in weather_historical: {max_date}")
 
-                today = datetime.utcnow().date()
+                today = datetime.now(timezone.utc).date()
                 two_days_ago = today - timedelta(days=2)
 
                 if isinstance(max_date, datetime):
