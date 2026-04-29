@@ -262,8 +262,18 @@
     async function loadNavbar() {
       const res = await fetch('./assets/components/navbar.html');
       const html = await res.text();
-      document.getElementById('navbar-placeholder').innerHTML = html;
-      const page = window.location.pathname.split('/').pop();
+      const placeholder = document.getElementById('navbar-placeholder');
+      placeholder.innerHTML = html;
+
+      const scripts = placeholder.querySelectorAll('script');
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+
+      const page = window.location.pathname.split('/').pop() || 'dashboard.html';
       document.querySelector(`a[href="${page}"]`)?.classList.add('active');
     }
 
@@ -464,7 +474,7 @@
     }
 
     async function initDashboard() {
-      Auth.requireAuth();
+
       Theme.init();
 
       // Parallel fetches with catch to handle empty API data gracefully
