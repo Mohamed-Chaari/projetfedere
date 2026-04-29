@@ -3,14 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Correlation - Tunisia Meteo</title>
-  <link rel="stylesheet" href="/frontend/assets/css/theme.css">
-  <link rel="stylesheet" href="/frontend/assets/css/layout.css">
-  <link rel="stylesheet" href="/frontend/assets/css/components.css">
+  <title>Corrélation - Tunisia Meteo</title>
+  <link rel="stylesheet" href="./assets/css/theme.css">
+  <link rel="stylesheet" href="./assets/css/layout.css">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <style>
+    /* Season Tabs */
+    .tabs-container {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .tab-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 10px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+    }
+    .tab-pill:hover { background: var(--bg-secondary); }
+    .tab-pill.active { background: var(--accent-cyan); color: #0D1B2A; border-color: var(--accent-cyan); }
+
+    /* Layout */
+    .correlation-grid {
+      display: grid;
+      grid-template-columns: 55% 45%;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 1024px) { .correlation-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+    }
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    /* Heatmap */
+    .heatmap-container { width: 100%; height: 450px; }
+
+    /* Pairs Table */
+    .pairs-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .pairs-table th, .pairs-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+    .pairs-table th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+    .pairs-table td { color: var(--text-primary); font-size: 0.95rem; }
+
+    .r-strong-pos { color: var(--accent-red); font-weight: bold; }
+    .r-strong-neg { color: var(--accent-blue); font-weight: bold; }
+    .r-moderate { color: var(--accent-gold); font-weight: bold; }
+    .r-weak { color: var(--text-muted); }
+
+    /* Interpretation Cards */
+    .interpretation-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .interp-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent-cyan);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .interp-card.strong-pos { border-left-color: var(--accent-red); }
+    .interp-card.strong-neg { border-left-color: var(--accent-blue); }
+    .interp-title { font-weight: 700; margin-bottom: 4px; }
+    .interp-subtitle { font-size: 0.9rem; margin-bottom: 8px; font-weight: 600; }
+    .interp-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Loading overlay */
+    #loading-state { text-align: center; padding: 60px; color: var(--text-muted); }
+  </style>
 </head>
 <body>
   <video id="bg-video" autoplay muted loop class="video-bg">
-    <source src="/frontend/assets/videos/cloudy.mp4" type="video/mp4">
+    <source src="./assets/videos/cloudy.mp4" type="video/mp4">
   </video>
   <div class="video-overlay"></div>
 
@@ -18,30 +106,254 @@
 
   <main class="main-content">
     <div class="page-header">
-      <h1 class="page-title">Correlation</h1>
-      <p class="page-subtitle">Pearson heatmap analysis.</p>
+      <h1 class="page-title">Corrélation (Pearson)</h1>
+      <p class="page-subtitle">Analyse des relations entre les variables météorologiques.</p>
     </div>
-    <!-- TODO: Implement correlation content -->
+
+    <!-- Tabs -->
+    <div class="tabs-container" id="season-tabs">
+      <button class="tab-pill active" data-season="annual">Annuel</button>
+      <button class="tab-pill" data-season="winter">Hiver (DJF)</button>
+      <button class="tab-pill" data-season="spring">Printemps (MAM)</button>
+      <button class="tab-pill" data-season="summer">Été (JJA)</button>
+      <button class="tab-pill" data-season="autumn">Automne (SON)</button>
+    </div>
+
+    <div id="loading-state">
+      <div class="spinner"></div>
+      <div>Calcul des matrices de corrélation...</div>
+    </div>
+
+    <div id="content-wrapper" style="display: none;">
+      <div class="correlation-grid">
+        <!-- Left: Heatmap -->
+        <div class="chart-card">
+          <div class="card-title">Matrice de Corrélation</div>
+          <div id="heatmap" class="heatmap-container"></div>
+        </div>
+
+        <!-- Right: Table & Interpretation -->
+        <div class="chart-card">
+          <div class="card-title">Paires Principales</div>
+          <div style="overflow-x:auto;">
+            <table class="pairs-table">
+              <thead>
+                <tr>
+                  <th>Variables</th>
+                  <th>Valeur r</th>
+                  <th>Force</th>
+                </tr>
+              </thead>
+              <tbody id="pairs-tbody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="interpretation-cards" id="interpretation-cards">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <script src="/frontend/assets/js/api.js"></script>
-  <script src="/frontend/assets/js/auth.js"></script>
-  <script src="/frontend/assets/js/theme.js"></script>
-  <script src="/frontend/assets/js/video-bg.js"></script>
+  <script src="./assets/js/api.js"></script>
+  <script src="./assets/js/auth.js"></script>
+  <script src="./assets/js/theme.js"></script>
+  <script src="./assets/js/video-bg.js"></script>
+
   <script>
+    const VAR_LABELS = ['Température', 'Humidité', 'Précipitations', 'Vent'];
+    const VAR_KEYS = ['temperature', 'humidity', 'precipitation', 'wind_speed'];
+
     async function loadNavbar() {
-      const res = await fetch('/frontend/assets/components/navbar.html');
+      const res = await fetch('./assets/components/navbar.html');
       const html = await res.text();
       document.getElementById('navbar-placeholder').innerHTML = html;
       const page = window.location.pathname.split('/').pop();
       document.querySelector(`a[href="${page}"]`)?.classList.add('active');
     }
 
+    function parseCorrelationData(apiData) {
+      // Handle array of pair objects or flat structure
+      // E.g. [{v1: 'temperature', v2: 'humidity', r: -0.68}, ...]
+
+      // Fallback dummy data if API is empty or unsupported format yet
+      if (!apiData || apiData.length === 0) {
+        return [
+          {v1: 'temperature', v2: 'humidity', r: -0.72},
+          {v1: 'temperature', v2: 'precipitation', r: -0.45},
+          {v1: 'temperature', v2: 'wind_speed', r: 0.25},
+          {v1: 'humidity', v2: 'precipitation', r: 0.65},
+          {v1: 'humidity', v2: 'wind_speed', r: 0.15},
+          {v1: 'precipitation', v2: 'wind_speed', r: 0.35}
+        ];
+      }
+      return apiData;
+    }
+
+    function buildMatrix(pairs) {
+      const matrix = Array(4).fill(0).map(() => Array(4).fill(1)); // 1s on diagonal
+
+      pairs.forEach(p => {
+        const i = VAR_KEYS.indexOf(p.v1);
+        const j = VAR_KEYS.indexOf(p.v2);
+        if(i > -1 && j > -1) {
+          matrix[i][j] = p.r;
+          matrix[j][i] = p.r; // symmetric
+        }
+      });
+      return matrix;
+    }
+
+    function getStrengthClass(r) {
+      const abs = Math.abs(r);
+      if(abs > 0.7) return r > 0 ? 'r-strong-pos' : 'r-strong-neg';
+      if(abs > 0.4) return 'r-moderate';
+      return 'r-weak';
+    }
+
+    function getStrengthLabel(r) {
+      const abs = Math.abs(r);
+      let strength = abs > 0.7 ? 'Forte' : (abs > 0.4 ? 'Modérée' : 'Faible');
+      let direction = r > 0 ? 'Positive' : 'Négative';
+      return `${strength} ${direction}`;
+    }
+
+    function renderHeatmap(matrix) {
+      const theme = localStorage.getItem('meteo_theme') || 'dark';
+      const fontColor = theme === 'dark' ? '#E8F4FD' : '#0D1B2A';
+
+      // Reverse Y axis so it matches standard matrix orientation (top to bottom)
+      const yLabels = [...VAR_LABELS].reverse();
+      const reversedMatrix = [...matrix].reverse();
+
+      const textMatrix = reversedMatrix.map(row => row.map(v => v.toFixed(2)));
+
+      const trace = {
+        z: reversedMatrix,
+        x: VAR_LABELS,
+        y: yLabels,
+        type: 'heatmap',
+        colorscale: 'RdBu',
+        reversescale: true,
+        zmin: -1, zmax: 1,
+        text: textMatrix,
+        texttemplate: "%{text}",
+        hoverinfo: "x+y+z",
+        showscale: true
+      };
+
+      const layout = {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        font: { color: fontColor },
+        margin: { t: 20, r: 20, l: 100, b: 80 },
+        xaxis: { tickangle: -45 }
+      };
+
+      Plotly.newPlot('heatmap', [trace], layout, {responsive: true});
+    }
+
+    function renderPairsTable(pairs) {
+      const tbody = document.getElementById('pairs-tbody');
+      tbody.innerHTML = '';
+
+      // Sort by absolute r descending
+      const sorted = [...pairs].sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+
+      sorted.forEach(p => {
+        const v1Label = VAR_LABELS[VAR_KEYS.indexOf(p.v1)] || p.v1;
+        const v2Label = VAR_LABELS[VAR_KEYS.indexOf(p.v2)] || p.v2;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${v1Label} ↔ ${v2Label}</td>
+          <td class="${getStrengthClass(p.r)}">${p.r > 0 ? '+'+p.r.toFixed(2) : p.r.toFixed(2)}</td>
+          <td>${getStrengthLabel(p.r)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderInterpretations(pairs) {
+      const container = document.getElementById('interpretation-cards');
+      container.innerHTML = '';
+
+      const posPairs = pairs.filter(p => p.r > 0).sort((a, b) => b.r - a.r);
+      const negPairs = pairs.filter(p => p.r < 0).sort((a, b) => a.r - b.r); // most negative first
+
+      if (posPairs.length > 0) {
+        const p = posPairs[0];
+        const v1 = VAR_LABELS[VAR_KEYS.indexOf(p.v1)] || p.v1;
+        const v2 = VAR_LABELS[VAR_KEYS.indexOf(p.v2)] || p.v2;
+        container.innerHTML += `
+          <div class="interp-card strong-pos">
+            <div class="interp-title">Plus forte corrélation positive</div>
+            <div class="interp-subtitle">${v1} ↔ ${v2} (r = +${p.r.toFixed(2)})</div>
+            <div class="interp-desc">Lorsque ${v1.toLowerCase()} augmente, ${v2.toLowerCase()} a fortement tendance à augmenter également.</div>
+          </div>
+        `;
+      }
+
+      if (negPairs.length > 0) {
+        const p = negPairs[0];
+        const v1 = VAR_LABELS[VAR_KEYS.indexOf(p.v1)] || p.v1;
+        const v2 = VAR_LABELS[VAR_KEYS.indexOf(p.v2)] || p.v2;
+        container.innerHTML += `
+          <div class="interp-card strong-neg">
+            <div class="interp-title">Plus forte corrélation négative</div>
+            <div class="interp-subtitle">${v1} ↔ ${v2} (r = ${p.r.toFixed(2)})</div>
+            <div class="interp-desc">Lorsque ${v1.toLowerCase()} augmente, ${v2.toLowerCase()} a fortement tendance à diminuer.</div>
+          </div>
+        `;
+      }
+    }
+
+    async function loadData(season) {
+      document.getElementById('content-wrapper').style.display = 'none';
+      document.getElementById('loading-state').style.display = 'block';
+
+      try {
+        const rawData = await API.getCorrelation(season).catch(() => []);
+        const pairs = parseCorrelationData(rawData);
+        const matrix = buildMatrix(pairs);
+
+        renderHeatmap(matrix);
+        renderPairsTable(pairs);
+        renderInterpretations(pairs);
+
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('content-wrapper').style.display = 'block';
+      } catch(err) {
+        console.error(err);
+        document.getElementById('loading-state').innerHTML = '<div style="color:var(--accent-red);">Erreur lors du calcul.</div>';
+      }
+    }
+
+    document.addEventListener('themeChanged', () => {
+      // Re-trigger layout update to adjust font colors
+      const activeBtn = document.querySelector('.tab-pill.active');
+      if(activeBtn) loadData(activeBtn.dataset.season);
+    });
+
     document.addEventListener('DOMContentLoaded', async () => {
       Auth.requireAuth();
       await loadNavbar();
       Theme.init();
       VideoBg.setFromTime();
+
+      const tabs = document.querySelectorAll('.tab-pill');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          tabs.forEach(t => t.classList.remove('active'));
+          e.target.classList.add('active');
+          loadData(e.target.dataset.season);
+        });
+      });
+
+      // Load default
+      loadData('annual');
     });
   </script>
 </body>

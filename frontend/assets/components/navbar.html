@@ -2,7 +2,10 @@
   <a href="dashboard.html" class="nav-brand">
     🌤 Tunisia Meteo
   </a>
-  <ul class="nav-links">
+
+  <button class="hamburger" id="nav-hamburger">☰</button>
+
+  <ul class="nav-links" id="nav-links">
     <li><a href="dashboard.html">Dashboard</a></li>
     <li><a href="realtime.html">Live</a></li>
     <li><a href="forecast.html">Forecast</a></li>
@@ -11,8 +14,20 @@
     <li><a href="correlation.html">Correlation</a></li>
     <li><a href="annual.html">Annual</a></li>
   </ul>
+
   <div class="nav-actions">
     <button class="theme-toggle" aria-label="Toggle theme"></button>
     <button class="badge badge-extreme" style="cursor: pointer;" onclick="Auth.logout()">Logout</button>
   </div>
 </nav>
+
+<script>
+  // Setup Hamburger toggle
+  const hamburger = document.getElementById('nav-hamburger');
+  const navLinks = document.getElementById('nav-links');
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+    });
+  }
+</script>

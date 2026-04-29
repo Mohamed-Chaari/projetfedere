@@ -19,7 +19,7 @@ const VideoBg = {
     });
 
     const type = this.codeToVideo(code);
-    const src = `/frontend/assets/videos/${type}.mp4`;
+    const src = `./assets/videos/${type}.mp4`;
     if (!video.src.endsWith(src)) {
       video.style.opacity = 0;
       setTimeout(() => {

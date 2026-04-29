@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tunisia Meteo - Redirecting</title>
-  <script src="/frontend/assets/js/auth.js"></script>
+  <script src="./assets/js/auth.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (Auth.isLoggedIn()) {
-        window.location.href = '/frontend/dashboard.html';
+        window.location.href = './dashboard.html';
       } else {
-        window.location.href = '/frontend/login.html';
+        window.location.href = './login.html';
       }
     });
   </script>
