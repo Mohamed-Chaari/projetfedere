@@ -256,7 +256,7 @@ stateDiagram-v2
 
 ## 5. Diagramme de Déploiement (Deployment Diagram)
 
-Ce diagramme illustre la façon dont l'application est déployée sur différents conteneurs (via Docker Compose).
+Ce diagramme illustre l'infrastructure Cloud hybride sur laquelle la plateforme est déployée.
 
 ```mermaid
 flowchart TD
@@ -264,41 +264,34 @@ flowchart TD
         UI[Interface Vanilla JS / HTML]
     end
 
-    subgraph DockerHost [Hôte Docker (Serveur / Local)]
-
-        subgraph ServeurWeb [Conteneur Nginx]
-            Nginx[Nginx : Sert les fichiers statiques]
-        end
-
-        subgraph Backend [Conteneur FastAPI]
-            API[FastAPI Uvicorn]
-        end
-
-        subgraph Pipeline [Conteneurs Python]
-            Prod[Kafka Producer]
-            Cons[Kafka Consumer]
-        end
-
-        subgraph MessageBroker [Conteneur Kafka]
-            Zook[Zookeeper] --- KBroker[Kafka Broker]
-        end
-
-        subgraph BaseDeDonnees [Conteneur PostgreSQL]
-            DB[(PostgreSQL 15 + TimescaleDB)]
-        end
-
-        subgraph Orchestration [Conteneurs Airflow]
-            AirflowUI[Airflow Webserver]
-            AirflowSched[Airflow Scheduler]
-        end
+    subgraph GitHubPages [Hébergement Frontend (GitHub)]
+        Frontend[Fichiers Statiques Vanilla JS]
     end
 
-    Client -->|HTTP/REST| ServeurWeb
-    ServeurWeb -->|Proxy Inversé| API
+    subgraph CloudServeur [Serveur d'Application Backend]
+        API[FastAPI Backend]
+        Prod[Kafka Producer Python]
+        Cons[Kafka Consumer Python]
+    end
 
-    API -->|TCP / psycopg2| DB
-    Prod -->|TCP| KBroker
-    KBroker -->|TCP| Cons
-    Cons -->|TCP / psycopg2| DB
-    AirflowSched -->|Exécute DAGs / db.execute_query| DB
+    subgraph AivenCloud [Aiven Cloud]
+        KBroker[[Cluster Kafka Géré]]
+    end
+
+    subgraph SupabaseCloud [Supabase (AWS)]
+        DB[(PostgreSQL 15 + TimescaleDB)]
+    end
+
+    subgraph AstroCloud [Astronomer / Astro Cloud]
+        AirflowSched[Airflow Scheduler & Workers]
+    end
+
+    Client -->|HTTP/REST| GitHubPages
+    Client -->|Appels API REST| API
+
+    API -->|Session Pooler IPv4| DB
+    Prod -->|TCP / TLS| KBroker
+    KBroker -->|TCP / TLS| Cons
+    Cons -->|Session Pooler IPv4| DB
+    AirflowSched -->|Session Pooler IPv4| DB
 ```
