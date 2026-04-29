@@ -12,4 +12,15 @@ logs/
 __pycache__/
 *.pyc
 venv/
+.venv/
 .pytest_cache/
+
+# Airflow runtime
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+webserver_config.py
+standalone_admin_password.txt
+
+# Astro CLI
+.astro/
