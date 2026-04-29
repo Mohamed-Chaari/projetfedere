@@ -1,8 +1,38 @@
-astro
+# Astro CLI
+.astro
+
+# Version control
 .git
+.github
+
+# Environment
 .env
-airflow_settings.yaml
-logs/
+.env.example
 .venv
-airflow.db
+
+# Python cache
+__pycache__
+*.pyc
+
+# Airflow local runtime
+airflow_settings.yaml
 airflow.cfg
+airflow.db
+airflow-webserver.pid
+standalone_admin_password.txt
+webserver_config.py
+logs/
+
+# Non-Airflow application code (not needed in DAG container)
+tests/
+api/
+frontend/
+scripts/
+db/
+src/
+
+# Deployment configs for other platforms
+Procfile
+render.yaml
+requirements-api.txt
+README.md

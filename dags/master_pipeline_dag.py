@@ -1,33 +1,15 @@
-import sys
-import os
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
+from src.analysis.monthly import check_data_freshness_fn, compute_monthly_averages_fn
+from src.analysis.peaks import detect_peaks_fn
+from src.analysis.correlations import compute_correlations_fn
+from src.analysis.annual import compute_annual_stats_fn
+from src.analysis.quality import run_quality_checks_fn
 from src.utils.db import get_connection, log_pipeline_run
-
-# Import callables
-from monthly_analysis_dag import (
-    compute_monthly_averages_fn as compute_monthly_averages,
-    check_data_freshness_fn as check_data_freshness
-)
-from peak_detection_dag import (
-    detect_peaks_fn as detect_peaks
-)
-from correlation_dag import (
-    compute_correlations_fn as compute_correlations,
-    check_min_data_fn as check_min_data
-)
-from annual_stats_dag import (
-    compute_annual_stats_fn as compute_annual_stats
-)
-from data_quality_dag import (
-    run_quality_checks_fn as run_quality_checks
-)
 
 logger = logging.getLogger(__name__)
 
@@ -51,32 +33,32 @@ with DAG(
 
     t1 = PythonOperator(
         task_id='check_freshness',
-        python_callable=check_data_freshness,
+        python_callable=check_data_freshness_fn,
     )
 
     t2 = PythonOperator(
         task_id='quick_quality_check',
-        python_callable=run_quality_checks,
+        python_callable=run_quality_checks_fn,
     )
 
     t3a = PythonOperator(
         task_id='monthly_averages',
-        python_callable=compute_monthly_averages,
+        python_callable=compute_monthly_averages_fn,
     )
 
     t3b = PythonOperator(
         task_id='peak_detection',
-        python_callable=detect_peaks,
+        python_callable=detect_peaks_fn,
     )
 
     t4 = PythonOperator(
         task_id='correlation_matrix',
-        python_callable=compute_correlations,
+        python_callable=compute_correlations_fn,
     )
 
     t5 = PythonOperator(
         task_id='annual_stats',
-        python_callable=compute_annual_stats,
+        python_callable=compute_annual_stats_fn,
     )
 
     def pipeline_complete_fn(**kwargs):
