@@ -469,7 +469,6 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
-      if (!Auth.requireAuth()) return;
       await loadNavbar();
       Theme.init();
       VideoBg.setFromTime();
