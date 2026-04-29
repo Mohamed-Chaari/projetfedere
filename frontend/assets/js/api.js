@@ -4,39 +4,22 @@ const BASE_URL = (window.location.hostname === 'localhost' || window.location.ho
 
 const API = {
 
-  getToken() {
-    return localStorage.getItem('meteo_token');
+  getHeaders() {
+    return { 'Content-Type': 'application/json' };
   },
 
-  getHeaders(auth = true) {
-    const headers = { 'Content-Type': 'application/json' };
-    if (auth) {
-      const token = this.getToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      // Don't redirect here — let requireAuth() handle auth gating
-    }
-    return headers;
-  },
-
-  async request(endpoint, options = {}, auth = true) {
+  async request(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`;
     const config = {
-      headers: this.getHeaders(auth),
+      headers: this.getHeaders(),
       ...options,
     };
     try {
       const res = await fetch(url, config);
       if (res.status === 401 || res.status === 403) {
-        // Only clear token and redirect if we're not already on the login page
-        // This prevents redirect loops when the backend rejects an expired token
-        const onLoginPage = window.location.pathname.endsWith('login.html');
-        if (!onLoginPage) {
-          localStorage.removeItem('meteo_token');
-          localStorage.removeItem('meteo_user');
-          window.location.href = './login.html';
-        }
+        localStorage.removeItem('meteo_token');
+        localStorage.removeItem('meteo_user');
+        console.warn('API returned 401/403. Authentication failed.');
         return null;
       }
       if (!res.ok) {
@@ -50,21 +33,7 @@ const API = {
     }
   },
 
-  // ── Auth ──────────────────────────────────────────────────
-  async login(username, password) {
-    const form = new FormData();
-    form.append('username', username);
-    form.append('password', password);
-    const res = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST', body: form,
-    });
-    if (!res.ok) throw new Error('Invalid credentials');
-    return await res.json();
-  },
 
-  async getMe() {
-    return this.request('/api/auth/me');
-  },
 
   // ── Dashboard ─────────────────────────────────────────────
   async getDashboardSummary() {
@@ -105,7 +74,7 @@ const API = {
 
   // ── Alerts ────────────────────────────────────────────────
   async getActiveAlerts() {
-    return this.request('/api/alerts/active', {}, false); // public
+    return this.request('/api/alerts/active'); // public
   },
   async getAlertHistory(params = {}) {
     const q = new URLSearchParams(params).toString();

@@ -17,7 +17,6 @@
 
   <div class="nav-actions">
     <button class="theme-toggle" aria-label="Toggle theme"></button>
-    <button id="auth-btn" class="badge badge-extreme" style="cursor: pointer;">...</button>
   </div>
 </nav>
 
@@ -31,19 +30,4 @@
     });
   }
 
-  // Setup Auth Button (Login/Logout for admins)
-  const authBtn = document.getElementById('auth-btn');
-  if (authBtn) {
-    if (Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
-      authBtn.textContent = 'Logout';
-      authBtn.onclick = () => {
-        if(Auth.logout) Auth.logout();
-      };
-    } else {
-      authBtn.textContent = 'Admin Login';
-      authBtn.onclick = () => {
-        window.location.href = './login.html';
-      };
-    }
-  }
 </script>
