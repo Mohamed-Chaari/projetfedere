@@ -12,8 +12,10 @@ const API = {
     const headers = { 'Content-Type': 'application/json' };
     if (auth) {
       const token = this.getToken();
-      if (!token) { window.location.href = './login.html'; return; }
-      headers['Authorization'] = `Bearer ${token}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      // Don't redirect here — let requireAuth() handle auth gating
     }
     return headers;
   },
@@ -27,8 +29,14 @@ const API = {
     try {
       const res = await fetch(url, config);
       if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem('meteo_token');
-        window.location.href = './login.html';
+        // Only clear token and redirect if we're not already on the login page
+        // This prevents redirect loops when the backend rejects an expired token
+        const onLoginPage = window.location.pathname.endsWith('login.html');
+        if (!onLoginPage) {
+          localStorage.removeItem('meteo_token');
+          localStorage.removeItem('meteo_user');
+          window.location.href = './login.html';
+        }
         return null;
       }
       if (!res.ok) {

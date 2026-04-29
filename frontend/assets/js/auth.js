@@ -5,7 +5,12 @@ const Auth = {
   isLoggedIn() { return !!this.getToken(); },
   requireAuth() {
     if (!this.isLoggedIn()) {
-      window.location.href = './login.html';
+      // Prevent redirect loop if already on login page
+      if (!window.location.pathname.endsWith('login.html')) {
+        window.location.href = './login.html';
+      }
+      // Throw to stop further page initialization
+      throw new Error('AUTH_REQUIRED');
     }
   },
   logout() {
