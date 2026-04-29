@@ -5,7 +5,7 @@ import calendar
 from datetime import datetime, timedelta, timezone
 
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 import pandas as pd
 import numpy as np
 import scipy.stats

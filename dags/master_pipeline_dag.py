@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 

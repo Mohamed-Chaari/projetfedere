@@ -5,8 +5,8 @@ import itertools
 from datetime import datetime, timedelta, timezone
 
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
-from airflow.sdk.exceptions import AirflowSkipException
+from airflow.operators.python import PythonOperator
+from airflow.exceptions import AirflowSkipException
 import pandas as pd
 import scipy.stats
 from psycopg2.extras import execute_batch
