@@ -12,7 +12,7 @@ from src.utils.cities import (
     list_regions,
     city_count,
 )
-
+#
 
 # ── Registry integrity ───────────────────────────────────────
 
