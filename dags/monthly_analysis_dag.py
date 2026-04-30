@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from src.analysis.monthly import check_data_freshness_fn, compute_monthly_averages_fn
-from src.utils.db import get_connection, log_pipeline_run
+from shared_logic.analysis.monthly import check_data_freshness_fn, compute_monthly_averages_fn
+from shared_logic.utils.db import get_connection, log_pipeline_run
 
 logger = logging.getLogger(__name__)
 

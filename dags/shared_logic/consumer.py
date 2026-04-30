@@ -28,8 +28,8 @@ from dotenv import load_dotenv
 from kafka import KafkaConsumer, KafkaProducer
 from psycopg2.extras import execute_batch
 
-from src.utils.db import get_connection, close_connection
-from src.utils.kafka_config import get_kafka_connection_config
+from shared_logic.utils.db import get_connection, close_connection
+from shared_logic.utils.kafka_config import get_kafka_connection_config
 
 load_dotenv()
 

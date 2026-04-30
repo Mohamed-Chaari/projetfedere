@@ -4,12 +4,12 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from src.analysis.monthly import check_data_freshness_fn, compute_monthly_averages_fn
-from src.analysis.peaks import detect_peaks_fn
-from src.analysis.correlations import compute_correlations_fn
-from src.analysis.annual import compute_annual_stats_fn
-from src.analysis.quality import run_quality_checks_fn
-from src.utils.db import get_connection, log_pipeline_run
+from shared_logic.analysis.monthly import check_data_freshness_fn, compute_monthly_averages_fn
+from shared_logic.analysis.peaks import detect_peaks_fn
+from shared_logic.analysis.correlations import compute_correlations_fn
+from shared_logic.analysis.annual import compute_annual_stats_fn
+from shared_logic.analysis.quality import run_quality_checks_fn
+from shared_logic.utils.db import get_connection, log_pipeline_run
 
 logger = logging.getLogger(__name__)
 

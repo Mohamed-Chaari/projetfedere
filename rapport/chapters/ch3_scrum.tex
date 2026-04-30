@@ -1,0 +1,118 @@
+% ══════════════════════════════════════════
+%  CHAPITRE 3 — MÉTHODOLOGIE SCRUM
+% ══════════════════════════════════════════
+\chapter{Méthodologie Scrum et Spécifications Globales}
+
+\section{Présentation de la démarche Scrum}
+Le projet a été mené selon la méthodologie agile \textbf{Scrum}, structurée en deux sprints de durée égale. Cette approche itérative nous a permis de livrer un incrément fonctionnel à chaque fin de sprint et d'adapter les priorités en fonction des retours.
+
+\begin{figure}[H]
+\centering
+\imgplaceholder{Figure~\ref{fig:scrum_cycle} — Cycle Scrum}{Diagramme illustrant le cycle Scrum avec Product Backlog, Sprint Planning, Daily Scrum, Sprint Review et Retrospective}
+\caption{Cycle de développement Scrum appliqué au projet}
+\label{fig:scrum_cycle}
+\end{figure}
+
+\textbf{Rôles~:}
+\begin{itemize}
+  \item \textbf{Product Owner}~: Mme Nesrine [Nom] (encadrante)
+  \item \textbf{Scrum Master}~: Mohamed Chaari
+  \item \textbf{Équipe de développement}~: Mohamed, Yessine, Moataz, Brahim
+\end{itemize}
+
+\section{Identification des acteurs}
+
+\begin{table}[H]
+\centering
+\caption{Acteurs du système}
+\label{tab:acteurs}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Acteur} & \textbf{Description} \\
+\midrule
+Utilisateur    & Consulte le dashboard, les prévisions et les analyses \\
+Administrateur & Gère l'infrastructure Cloud et les configurations \\
+Analyste       & Consulte les analyses statistiques avancées et les alertes \\
+Système        & Exécute automatiquement les pipelines et les DAGs \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Besoins fonctionnels et non fonctionnels globaux}
+
+\subsection{Besoins fonctionnels}
+\begin{enumerate}
+  \item Collecter les données météo historiques (2020--2024) et temps réel pour 221 villes.
+  \item Ingérer les données via un système de streaming fiable (Kafka).
+  \item Stocker les données dans une base PostgreSQL Cloud (Supabase).
+  \item Orchestrer les analyses automatisées (moyennes, corrélations, pics, tendances).
+  \item Exposer les données via une API REST documentée.
+  \item Afficher les résultats dans un dashboard interactif avec cartes et graphiques.
+\end{enumerate}
+
+\subsection{Besoins non fonctionnels}
+\begin{itemize}
+  \item \textbf{Performance}~: Ingestion de $>$200 enregistrements/batch sans perte.
+  \item \textbf{Disponibilité}~: Infrastructure Cloud avec haute disponibilité (Supabase, Aiven).
+  \item \textbf{Sécurité}~: Connexions SSL pour Kafka, mots de passe chiffrés.
+  \item \textbf{Maintenabilité}~: Code modulaire avec tests unitaires ($>$100 tests).
+  \item \textbf{Scalabilité}~: Architecture découplée permettant l'ajout de nouvelles villes ou sources.
+\end{itemize}
+
+\section{Diagramme de cas d'utilisation global}
+
+\begin{figure}[H]
+\centering
+\imgplaceholder{Figure~\ref{fig:uc_global} — Diagramme de cas d'utilisation global}{Diagramme UML montrant les 4 acteurs (Utilisateur, Administrateur, Analyste, Système) et les cas d'utilisation principaux~: Consulter Dashboard, Voir Prévisions, Analyser Tendances, Recevoir Alertes, Configurer Infrastructure, Exécuter Pipeline}
+\caption{Diagramme de cas d'utilisation global}
+\label{fig:uc_global}
+\end{figure}
+
+\section{Product Backlog complet}
+
+\begin{table}[H]
+\centering
+\caption{Product Backlog — Liste des User Stories}
+\label{tab:backlog}
+\begin{tabularx}{\textwidth}{clXcc}
+\toprule
+\textbf{US} & \textbf{Sprint} & \textbf{Description} & \textbf{Priorité} & \textbf{Points} \\
+\midrule
+US1 & S1 & Configuration de Supabase et Aiven            & Haute & 8 \\
+US2 & S1 & Producer live et Consumer vers la DB            & Haute & 13 \\
+US3 & S1 & Endpoints API /summary et /forecast             & Moyenne & 8 \\
+US4 & S1 & Authentification JWT                             & Moyenne & 5 \\
+US5 & S1 & Dashboard et graphiques de prévisions            & Haute & 13 \\
+US6 & S1 & Validation des flux et plan de test              & Basse & 3 \\
+\midrule
+US7 & S2 & DAGs Airflow (moyennes, corrélations)            & Haute & 13 \\
+US8 & S2 & Détection de pics (canicule, tempêtes)            & Haute & 8 \\
+US9 & S2 & Documentation, monitoring et livraison finale     & Moyenne & 5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Architecture globale du système}
+
+\begin{figure}[H]
+\centering
+\imgplaceholder{Figure~\ref{fig:archi_globale} — Architecture globale du pipeline}{Diagramme d'architecture montrant~: APIs Météo $\rightarrow$ Producer Python $\rightarrow$ Aiven Kafka $\rightarrow$ Consumer Python $\rightarrow$ Supabase PostgreSQL $\rightarrow$ Airflow DAGs $\rightarrow$ FastAPI $\rightarrow$ Dashboard Frontend}
+\caption{Architecture globale du système Météo Tunisie}
+\label{fig:archi_globale}
+\end{figure}
+
+\section{Planification des Sprints}
+
+\begin{table}[H]
+\centering
+\caption{Répartition des Sprints}
+\label{tab:sprints}
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Sprint} & \textbf{Objectif} & \textbf{User Stories} \\
+\midrule
+Sprint 1 & Infrastructure Cloud et Flux Temps Réel    & US1 à US6 \\
+Sprint 2 & Analyses Avancées, Alertes et Déploiement   & US7 à US9 \\
+\bottomrule
+\end{tabularx}
+\end{table}

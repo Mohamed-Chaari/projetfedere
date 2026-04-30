@@ -24,12 +24,12 @@ webserver_config.py
 logs/
 
 # Non-Airflow application code (not needed in DAG container)
-tests/
-api/
-frontend/
-scripts/
-db/
-src/
+/tests/
+/api/
+/frontend/
+/scripts/
+/db/
+/src/
 
 # Deployment configs for other platforms
 Procfile

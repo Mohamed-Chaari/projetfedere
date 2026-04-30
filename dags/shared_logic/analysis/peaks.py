@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from psycopg2.extras import execute_batch
 
-from src.utils.db import get_connection, get_engine
+from shared_logic.utils.db import get_connection, get_engine
 
 logger = logging.getLogger(__name__)
 

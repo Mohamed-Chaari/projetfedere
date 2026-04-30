@@ -1,0 +1,38 @@
+% ══════════════════════════════════════════
+%  CHAPITRE 1 — INTRODUCTION GÉNÉRALE
+% ══════════════════════════════════════════
+\chapter{Introduction Générale}
+
+\section{Contexte et motivation}
+La Tunisie, pays méditerranéen aux contrastes climatiques marqués, est exposée à des phénomènes météorologiques variés~: canicules estivales, précipitations intenses et vents violents. La compréhension fine de ces phénomènes est essentielle pour l'agriculture, le tourisme et la gestion des risques naturels. Or, les données météorologiques existantes sont souvent dispersées, difficilement accessibles et insuffisamment exploitées.
+
+Dans ce contexte, les technologies Big Data offrent une opportunité unique de centraliser, analyser et valoriser ces données à grande échelle. L'émergence des services Cloud managés (SaaS/PaaS) tels que Supabase, Aiven et Astronomer permet de déployer des architectures de données sophistiquées sans infrastructure on-premise.
+
+\section{Problématique}
+Comment concevoir et déployer un pipeline de données météorologiques de bout en bout, capable de~:
+\begin{itemize}
+  \item Collecter les données historiques et temps réel de \textbf{221 villes tunisiennes}~?
+  \item Ingérer ces données de manière fiable via un système de streaming distribué~?
+  \item Orchestrer des analyses statistiques avancées de manière automatisée~?
+  \item Exposer les résultats à travers une interface web interactive et intuitive~?
+\end{itemize}
+
+\section{Objectifs du projet}
+Les objectifs principaux de ce projet sont~:
+\begin{enumerate}
+  \item \textbf{Infrastructure Cloud}~: Mettre en place une base PostgreSQL sur Supabase et un broker Kafka sur Aiven pour l'ingestion en temps réel.
+  \item \textbf{Pipeline de données}~: Développer des Producers et Consumers Python pour alimenter la base de données à partir des APIs météorologiques (Open-Meteo, OpenWeatherMap).
+  \item \textbf{Orchestration analytique}~: Créer des DAGs Apache Airflow pour automatiser les analyses mensuelles, annuelles, la détection de pics et les corrélations.
+  \item \textbf{API et Visualisation}~: Exposer les données via une API REST (FastAPI) et un dashboard interactif avec cartes et graphiques.
+  \item \textbf{Déploiement Cloud}~: Déployer l'ensemble sur des services managés (Astronomer pour Airflow, Render pour l'API, GitHub Pages pour le frontend).
+\end{enumerate}
+
+\section{Structure du rapport}
+Ce rapport est organisé comme suit~:
+\begin{itemize}
+  \item \textbf{Chapitre 2}~: État de l'art sur les systèmes météorologiques et les architectures Big Data.
+  \item \textbf{Chapitre 3}~: Méthodologie Scrum et spécifications globales du projet.
+  \item \textbf{Chapitre 4}~: Sprint 1 — Infrastructure Cloud et flux temps réel.
+  \item \textbf{Chapitre 5}~: Sprint 2 — Analyses avancées, alertes et déploiement.
+  \item \textbf{Chapitre 6}~: Tests globaux et validation finale.
+\end{itemize}

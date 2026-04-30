@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from airflow.exceptions import AirflowException
 
-from src.utils.db import get_connection
+from shared_logic.utils.db import get_connection
 
 logger = logging.getLogger(__name__)
 

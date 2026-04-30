@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from src.analysis.correlations import check_min_data_fn, compute_correlations_fn
-from src.utils.db import get_connection, log_pipeline_run
+from shared_logic.analysis.correlations import check_min_data_fn, compute_correlations_fn
+from shared_logic.utils.db import get_connection, log_pipeline_run
 
 logger = logging.getLogger(__name__)
 

@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from src.analysis.annual import compute_annual_stats_fn
-from src.utils.db import log_pipeline_run
+from shared_logic.analysis.annual import compute_annual_stats_fn
+from shared_logic.utils.db import log_pipeline_run
 
 logger = logging.getLogger(__name__)
 

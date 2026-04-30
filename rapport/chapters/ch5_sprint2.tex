@@ -1,0 +1,114 @@
+% CHAPITRE 5 — SPRINT 2
+\chapter{Sprint 2~: Analyses Avancées, Alertes et Déploiement}
+
+\section{Introduction}
+Le second sprint transforme les données brutes en informations stratégiques via des analyses statistiques et un système d'alertes automatisé.
+
+\section{Objectif et Sprint Backlog}
+\textbf{Objectif~:} Développer les modules d'analyses (corrélations, moyennes), le système de détection de pics, et déployer sur Astronomer Cloud.
+
+\begin{table}[H]\centering\caption{Sprint Backlog — Sprint 2}\label{tab:sprint2_backlog}
+\begin{tabularx}{\textwidth}{clX}\toprule
+\textbf{US} & \textbf{Catégorie} & \textbf{Description} \\\midrule
+US7 & Analyses & DAGs Airflow pour moyennes et corrélations \\
+US8 & Alertes & Détection de pics thermiques (z-score) \\
+US9 & Livraison & Documentation, monitoring, README \\\bottomrule
+\end{tabularx}\end{table}
+
+\section{Analyse et Spécification}
+
+\subsection{Cas d'utilisation}
+\begin{figure}[H]\centering
+\imgplaceholder{Figure — Cas d'utilisation Sprint 2}{Diagramme UML~: Analyste et Système avec cas Visualiser Analyses, Détecter Pics, Recevoir Alertes}
+\caption{Diagramme de cas d'utilisation — Sprint 2}\label{fig:uc_sprint2}\end{figure}
+
+\begin{table}[H]\centering\caption{CU — Visualiser analyses statistiques (US7)}\label{tab:uc_stats}
+\begin{tabularx}{\textwidth}{lX}\toprule
+\textbf{Élément} & \textbf{Description} \\\midrule
+Acteur & Analyste / Utilisateur \\
+Scénario & 1. Sélection période \quad 2. Calcul corrélations Pearson \quad 3. Affichage Heatmap \\\bottomrule
+\end{tabularx}\end{table}
+
+\begin{table}[H]\centering\caption{CU — Détecter un pic de chaleur (US8)}\label{tab:uc_peak}
+\begin{tabularx}{\textwidth}{lX}\toprule
+\textbf{Élément} & \textbf{Description} \\\midrule
+Acteur & Système \\
+Scénario & 1. DAG peak\_detection s'exécute \quad 2. Calcul $z = (T-\mu)/\sigma$ \quad 3. Si $z>1.5$ insertion alerte \quad 4. Sévérité~: modéré/élevé/extrême \\\bottomrule
+\end{tabularx}\end{table}
+
+\section{Conception}
+
+\subsection{Diagramme de classes}
+\begin{figure}[H]\centering
+\imgplaceholder{Diagramme de classes}{Classes~: WeatherData, MonthlyAverage, Correlation, TemperaturePeak, AnnualStats, DataQualityLog, PipelineRun}
+\caption{Diagramme de classes final}\label{fig:class_diagram}\end{figure}
+
+\subsection{Diagramme de séquence — Alerte}
+\begin{figure}[H]\centering
+\imgplaceholder{Séquence alerte}{Airflow $\rightarrow$ peak\_detection $\rightarrow$ Supabase $\rightarrow$ z-score $\rightarrow$ INSERT peaks $\rightarrow$ Frontend}
+\caption{Séquence — Détection de pic thermique}\label{fig:seq_alert}\end{figure}
+
+\subsection{Diagramme d'activité — Pipeline}
+\begin{figure}[H]\centering
+\imgplaceholder{Activité pipeline}{Check Freshness $\rightarrow$ Quality $\rightarrow$ [Monthly || Peaks] $\rightarrow$ Correlations $\rightarrow$ Annual $\rightarrow$ Complete}
+\caption{Activité — master\_weather\_pipeline}\label{fig:activity_pipeline}\end{figure}
+
+\section{Implémentation}
+
+\subsection{DAGs Airflow}
+\begin{table}[H]\centering\caption{DAGs Airflow}\label{tab:dags}
+\begin{tabularx}{\textwidth}{lXl}\toprule
+\textbf{DAG ID} & \textbf{Fonction} & \textbf{Schedule} \\\midrule
+monthly\_analysis & Moyennes mensuelles & 07h quotidien \\
+peak\_detection & Pics thermiques z-score & 07h quotidien \\
+correlation\_analysis & Pearson saisonnières & Lundi 08h \\
+annual\_stats & Stats annuelles, tendances & 1er janvier \\
+data\_quality\_monitor & Contrôle qualité & 10h quotidien \\
+master\_weather\_pipeline & Orchestration & 06h quotidien \\\bottomrule
+\end{tabularx}\end{table}
+
+\begin{lstlisting}[language=Python,caption={Architecture modulaire des DAGs}]
+# dags/src/analysis/peaks.py
+def detect_peaks_fn():
+    df = pd.read_sql("SELECT * FROM weather_historical", engine)
+    df['z_score'] = (df['temperature'] - df['temperature'].mean()) / df['temperature'].std()
+    peaks = df[df['z_score'] > 1.5]
+    return {'total': len(peaks)}
+\end{lstlisting}
+
+\begin{figure}[H]\centering
+\imgplaceholder{Interface Airflow}{Capture des 6 DAGs avec statut et schedule}
+\caption{Interface Airflow — 6 DAGs}\label{fig:airflow_ui}\end{figure}
+
+\begin{figure}[H]\centering
+\imgplaceholder{Graphe Master DAG}{Graphe du master\_weather\_pipeline}
+\caption{Graphe master\_weather\_pipeline}\label{fig:dag_graph}\end{figure}
+
+\subsection{Déploiement Astronomer Cloud}
+\begin{lstlisting}[caption={Dockerfile Astronomer}]
+FROM astrocrpublic.azurecr.io/runtime:3.2-3
+\end{lstlisting}
+
+\begin{figure}[H]\centering
+\imgplaceholder{Astronomer Cloud}{Capture du déploiement réussi}
+\caption{Déploiement Astronomer Cloud}\label{fig:astro_deploy}\end{figure}
+
+\subsection{Interfaces Plotly.js}
+\begin{figure}[H]\centering
+\imgplaceholder{Heatmap corrélations}{Matrice de corrélation Plotly.js}
+\caption{Matrice de corrélation saisonnière}\label{fig:heatmap}\end{figure}
+
+\begin{figure}[H]\centering
+\imgplaceholder{Pics thermiques}{Graphique des pics par sévérité}
+\caption{Pics thermiques détectés}\label{fig:peaks_chart}\end{figure}
+
+\section{Tests Sprint 2}
+\begin{table}[H]\centering\caption{Tests Sprint 2}\label{tab:tests_sprint2}
+\begin{tabularx}{\textwidth}{clXc}\toprule
+\textbf{ID} & \textbf{Type} & \textbf{Description} & \textbf{OK} \\\midrule
+TC-06 & Unitaire & Corrélations Pearson & \ding{51} \\
+TC-07 & Unitaire & Pics z-score $>1.5$ & \ding{51} \\
+TC-08 & Intégration & Master DAG complet & \ding{51} \\
+TC-09 & Fonctionnel & Heatmap interactive & \ding{51} \\
+TC-10 & Performance & DAG $<60$s / 221 villes & \ding{51} \\\bottomrule
+\end{tabularx}\end{table}

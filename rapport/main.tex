@@ -1,0 +1,400 @@
+% ══════════════════════════════════════════════════════════════
+%  Rapport PFE — Météo Tunisie · Pipeline Big Data
+%  ISIMS Sfax · Département ADBD · 2025-2026
+% ══════════════════════════════════════════════════════════════
+\documentclass[a4paper,12pt,oneside]{report}
+
+% ─── Encodage et langue ───
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{csquotes}
+
+% ─── Mise en page ───
+\usepackage[top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ─── Graphiques et couleurs ───
+\usepackage{graphicx}
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows.meta,positioning,fit}
+
+% ─── Tableaux ───
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{array}
+
+% ─── Code source ───
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!8},
+  frame=single,
+  rulecolor=\color{gray!40},
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue!70!black}\bfseries,
+  commentstyle=\color{green!50!black}\itshape,
+  stringstyle=\color{red!60!black},
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b
+}
+
+% ─── Liens et PDF ───
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={Météo Tunisie — Pipeline Big Data},
+  pdfauthor={Équipe Projet ISIMS},
+  pdfsubject={Rapport PFE},
+}
+
+% ─── Divers ───
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{pifont}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{caption}
+\usepackage{url}
+
+% ─── Commandes personnalisées ───
+\newcommand{\imgplaceholder}[2]{%
+  \begin{tcolorbox}[colback=blue!5,colframe=blue!40,title=#1]
+    \centering\itshape #2\\[6pt]
+    \texttt{$\rightarrow$ Insérer la capture ici}
+  \end{tcolorbox}
+}
+
+% ══════════════════════════════════════════════════════════════
+\begin{document}
+
+% ─────────────────────────────────────────
+%  PAGE DE GARDE
+% ─────────────────────────────────────────
+\begin{titlepage}
+\centering
+\vspace*{1cm}
+
+% Logo université
+% \includegraphics[width=4cm]{figures/logo_isims.png}
+\imgplaceholder{Logo}{Logo ISIMS Sfax}
+
+\vspace{0.5cm}
+{\large \textbf{Université de Sfax}}\\[4pt]
+{\large Institut Supérieur d'Informatique et de Multimédia de Sfax}\\[4pt]
+{\large Département ADBD}\\[1.5cm]
+
+{\Large \textbf{RAPPORT DE PROJET}}\\[0.3cm]
+{\large Année universitaire 2025--2026}\\[1.5cm]
+
+\rule{\textwidth}{1.5pt}\\[0.4cm]
+{\LARGE \textbf{Météo Tunisie}}\\[0.2cm]
+{\Large Pipeline Big Data de Collecte, Analyse et\\Visualisation des Données Météorologiques}\\[0.4cm]
+\rule{\textwidth}{1.5pt}\\[2cm]
+
+\begin{minipage}[t]{0.45\textwidth}
+\textbf{Réalisé par :}\\
+Mohamed Chaari\\
+Yessine [Nom]\\
+Moataz [Nom]\\
+Brahim [Nom]
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+\raggedleft
+\textbf{Encadré par :}\\
+Mme Nesrine [Nom]
+\end{minipage}
+
+\vfill
+{\large Sfax, 2025--2026}
+\end{titlepage}
+
+% ─────────────────────────────────────────
+%  DÉDICACES
+% ─────────────────────────────────────────
+\chapter*{Dédicaces}
+\addcontentsline{toc}{chapter}{Dédicaces}
+\thispagestyle{empty}
+\vspace*{3cm}
+\begin{center}
+\textit{À nos familles,\\
+qui nous ont soutenus tout au long de ce parcours.\\[1cm]
+À nos enseignants,\\
+pour leur patience et leur dévouement.\\[1cm]
+À tous ceux qui ont contribué,\\
+de près ou de loin, à la réalisation de ce projet.}
+\end{center}
+\newpage
+
+% ─────────────────────────────────────────
+%  REMERCIEMENTS
+% ─────────────────────────────────────────
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+
+Nous tenons à exprimer nos sincères remerciements à notre encadrante, \textbf{Mme Nesrine [Nom]}, pour son accompagnement, ses conseils précieux et sa disponibilité tout au long de ce projet.
+
+Nous remercions également l'ensemble du corps enseignant du département ADBD de l'ISIMS de Sfax pour la formation de qualité qu'ils nous ont dispensée.
+
+Enfin, nous adressons nos remerciements à toutes les personnes qui ont contribué, de près ou de loin, à la réalisation de ce travail.
+
+\newpage
+
+% ─────────────────────────────────────────
+%  RÉSUMÉ
+% ─────────────────────────────────────────
+\chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
+
+\textbf{Français :}\\
+Ce projet porte sur la conception et le développement d'une plateforme Big Data dédiée à la collecte, l'analyse et la visualisation des données météorologiques de 221 villes tunisiennes. L'architecture s'appuie sur un pipeline de streaming en temps réel utilisant Apache Kafka (Aiven) pour l'ingestion, Supabase (PostgreSQL) pour le stockage, Apache Airflow pour l'orchestration des analyses, et une API REST FastAPI pour l'exposition des données. Le système couvre l'historique météorologique de 2020 à 2024, l'ingestion temps réel toutes les 15 minutes, ainsi que des analyses avancées incluant la détection de pics thermiques, les corrélations saisonnières et les tendances annuelles.
+
+\vspace{0.8cm}
+\textbf{English:}\\
+This project focuses on designing and developing a Big Data platform for collecting, analyzing, and visualizing meteorological data from 221 Tunisian cities. The architecture relies on a real-time streaming pipeline using Apache Kafka (Aiven) for ingestion, Supabase (PostgreSQL) for storage, Apache Airflow for analysis orchestration, and a FastAPI REST API for data exposure. The system covers the weather history from 2020 to 2024, real-time ingestion every 15 minutes, and advanced analytics including thermal peak detection, seasonal correlations, and annual trends.
+
+\newpage
+
+% ─────────────────────────────────────────
+%  LISTE DES ABRÉVIATIONS
+% ─────────────────────────────────────────
+\chapter*{Liste des Abréviations}
+\addcontentsline{toc}{chapter}{Liste des Abréviations}
+
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Abréviation} & \textbf{Signification} \\
+\midrule
+API     & Application Programming Interface \\
+ADBD    & Administration des Bases de Données \\
+DAG     & Directed Acyclic Graph \\
+DB      & Database (Base de données) \\
+E2E     & End-to-End \\
+JWT     & JSON Web Token \\
+KPI     & Key Performance Indicator \\
+OWM     & OpenWeatherMap \\
+PaaS    & Platform as a Service \\
+REST    & Representational State Transfer \\
+SaaS    & Software as a Service \\
+SQL     & Structured Query Language \\
+SSL     & Secure Sockets Layer \\
+UI/UX   & User Interface / User Experience \\
+US      & User Story \\
+\bottomrule
+\end{tabularx}
+
+\newpage
+
+% ─────────────────────────────────────────
+%  TABLES
+% ─────────────────────────────────────────
+\tableofcontents
+\newpage
+\listoffigures
+\addcontentsline{toc}{chapter}{Liste des Figures}
+\newpage
+\listoftables
+\addcontentsline{toc}{chapter}{Liste des Tableaux}
+\newpage
+
+% ══════════════════════════════════════════════════════════════
+%  CHAPITRES
+% ══════════════════════════════════════════════════════════════
+\input{chapters/ch1_introduction}
+\input{chapters/ch2_etat_art}
+\input{chapters/ch3_scrum}
+\input{chapters/ch4_sprint1}
+\input{chapters/ch5_sprint2}
+\input{chapters/ch6_tests}
+
+% ─────────────────────────────────────────
+%  CONCLUSION
+% ─────────────────────────────────────────
+\chapter*{Conclusion et Perspectives}
+\addcontentsline{toc}{chapter}{Conclusion et Perspectives}
+
+\section*{Bilan du projet}
+Au terme de ce projet, nous avons conçu et déployé une plateforme Big Data complète dédiée à la météorologie tunisienne. Le système couvre l'intégralité du cycle de vie de la donnée~: collecte depuis les APIs Open-Meteo et OpenWeatherMap, ingestion en temps réel via Apache Kafka (Aiven), stockage persistant sur Supabase (PostgreSQL), orchestration analytique via Apache Airflow déployé sur Astronomer Cloud, et visualisation interactive à travers un dashboard responsive.
+
+Les principaux résultats incluent~:
+\begin{itemize}
+  \item Couverture de \textbf{221 villes tunisiennes} avec un historique de 5 ans (2020--2024).
+  \item \textbf{6 DAGs Airflow} opérationnels~: analyses mensuelles, annuelles, détection de pics, corrélations saisonnières, qualité des données et pipeline maître.
+  \item \textbf{125 tests unitaires} validant l'ensemble des modules.
+  \item Un dashboard interactif avec thème sombre/clair et cartes Leaflet.js.
+\end{itemize}
+
+\section*{Limites et difficultés rencontrées}
+\begin{itemize}
+  \item La gestion des connexions IPv6 sur le tier gratuit de Supabase a nécessité le recours au Session Pooler.
+  \item La synchronisation des certificats SSL Kafka entre l'environnement local et le conteneur Docker Astronomer.
+  \item Le volume de données (221 villes $\times$ 5 ans $\times$ 4 variables) impose des optimisations SQL pour les analyses.
+\end{itemize}
+
+\section*{Perspectives d'amélioration}
+\begin{itemize}
+  \item Intégration de modèles de Machine Learning (LSTM, Prophet) pour la prévision météo.
+  \item Ajout d'un système de notifications push (Firebase) pour les alertes météo critiques.
+  \item Extension aux données satellite (Copernicus) pour une couverture spatiale plus fine.
+  \item Migration vers TimescaleDB pour optimiser les requêtes temporelles.
+\end{itemize}
+
+% ─────────────────────────────────────────
+%  BIBLIOGRAPHIE
+% ─────────────────────────────────────────
+\chapter*{Bibliographie}
+\addcontentsline{toc}{chapter}{Bibliographie}
+
+\begin{enumerate}[label={[\arabic*]}]
+  \item Apache Software Foundation, \textit{Apache Kafka Documentation}, \url{https://kafka.apache.org/documentation/}, consulté en 2025.
+  \item Apache Software Foundation, \textit{Apache Airflow Documentation}, \url{https://airflow.apache.org/docs/}, consulté en 2025.
+  \item Supabase Inc., \textit{Supabase Documentation}, \url{https://supabase.com/docs}, consulté en 2025.
+  \item Aiven Ltd., \textit{Aiven for Apache Kafka}, \url{https://aiven.io/kafka}, consulté en 2025.
+  \item Open-Meteo, \textit{Free Weather API}, \url{https://open-meteo.com/}, consulté en 2025.
+  \item Astronomer Inc., \textit{Astronomer Documentation}, \url{https://docs.astronomer.io/}, consulté en 2025.
+  \item S.~Ramírez, \textit{FastAPI Documentation}, \url{https://fastapi.tiangolo.com/}, consulté en 2025.
+  \item W.~McKinney, \textit{Python for Data Analysis}, O'Reilly Media, 3\textsuperscript{e} édition, 2022.
+  \item K.~Schwaber et J.~Sutherland, \textit{The Scrum Guide}, 2020.
+  \item M.~Kleppmann, \textit{Designing Data-Intensive Applications}, O'Reilly Media, 2017.
+\end{enumerate}
+
+% ─────────────────────────────────────────
+%  ANNEXES
+% ─────────────────────────────────────────
+\appendix
+\chapter{Schéma SQL Complet}
+\label{app:sql}
+
+\begin{lstlisting}[language=SQL,caption={Extrait du schéma de la base de données Supabase}]
+-- Table principale des mesures historiques
+CREATE TABLE weather_historical (
+    id            SERIAL PRIMARY KEY,
+    date          DATE NOT NULL,
+    city          VARCHAR(100) NOT NULL,
+    governorate   VARCHAR(100),
+    region        VARCHAR(50),
+    temperature   REAL,
+    humidity      REAL,
+    precipitation REAL,
+    wind_speed    REAL,
+    ingested_at   TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(date, city)
+);
+
+-- Table des moyennes mensuelles (calculee par Airflow)
+CREATE TABLE monthly_averages (
+    id            SERIAL PRIMARY KEY,
+    year          INTEGER NOT NULL,
+    month         INTEGER NOT NULL,
+    city          VARCHAR(100) NOT NULL,
+    governorate   VARCHAR(100),
+    region        VARCHAR(50),
+    avg_temp      REAL,
+    max_temp      REAL,
+    min_temp      REAL,
+    avg_humidity  REAL,
+    avg_precip    REAL,
+    avg_wind      REAL,
+    record_count  INTEGER,
+    computed_at   TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(year, month, city)
+);
+
+-- Table des correlations saisonnieres
+CREATE TABLE correlations (
+    id              SERIAL PRIMARY KEY,
+    variable_a      VARCHAR(50) NOT NULL,
+    variable_b      VARCHAR(50) NOT NULL,
+    season          VARCHAR(20) NOT NULL,
+    pearson_r       REAL,
+    p_value         REAL,
+    interpretation  VARCHAR(50),
+    is_significant  BOOLEAN,
+    computed_at     TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(variable_a, variable_b, season)
+);
+\end{lstlisting}
+
+\chapter{Configuration Kafka et Variables d'Environnement}
+\label{app:config}
+
+\begin{lstlisting}[caption={Fichier .env.example}]
+# Aiven Kafka (SSL)
+KAFKA_BOOTSTRAP=kafka-projetfedere-....aivencloud.com:21849
+KAFKA_SECURITY_PROTOCOL=SSL
+KAFKA_CA_FILE=ca.pem
+KAFKA_CERT_FILE=service.cert
+KAFKA_KEY_FILE=service.key
+
+# Supabase PostgreSQL
+DB_HOST=aws-1-eu-central-1.pooler.supabase.com
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=postgres.your_project_ref
+DB_PASSWORD=your_password
+
+# Weather APIs
+TIMEZONE=Africa/Tunis
+START_DATE=2020-01-01
+END_DATE=2024-12-31
+OWM_API_KEY=your_api_key
+\end{lstlisting}
+
+\chapter{Guide de Déploiement}
+\label{app:deploy}
+
+\section{Supabase}
+\begin{enumerate}
+  \item Créer un projet sur \url{https://supabase.com}
+  \item Exécuter le schéma SQL (Annexe~\ref{app:sql}) dans l'éditeur SQL
+  \item Récupérer le host du Session Pooler (Settings $\rightarrow$ Database)
+\end{enumerate}
+
+\section{Aiven Kafka}
+\begin{enumerate}
+  \item Créer un service Kafka sur \url{https://aiven.io}
+  \item Télécharger les certificats SSL (ca.pem, service.cert, service.key)
+  \item Créer les topics~: \texttt{weather-historical}, \texttt{weather-current}, \texttt{weather-forecast}
+\end{enumerate}
+
+\section{Astronomer Cloud (Airflow)}
+\begin{enumerate}
+  \item Installer Docker Desktop et le CLI Astro~: \texttt{brew install astro}
+  \item Se connecter~: \texttt{astro login}
+  \item Valider les DAGs~: \texttt{astro dev parse}
+  \item Déployer~: \texttt{astro deploy}
+  \item Configurer les variables d'environnement dans l'UI Astronomer
+\end{enumerate}
+
+\chapter{Manuel Utilisateur}
+\label{app:user}
+
+\section{Accès au Dashboard}
+L'utilisateur accède à la plateforme via un navigateur web. La page d'accueil présente un tableau de bord avec les indicateurs météo principaux.
+
+\imgplaceholder{Figure — Dashboard principal}{Capture d'écran du dashboard avec les KPIs météo, la carte Leaflet et les graphiques Plotly.js}
+
+\section{Navigation}
+\begin{itemize}
+  \item \textbf{Accueil}~: Vue d'ensemble avec carte interactive
+  \item \textbf{Temps réel}~: Données actuelles avec rafraîchissement automatique
+  \item \textbf{Prévisions}~: Prévisions à 7 jours par ville
+  \item \textbf{Analyses}~: Corrélations, tendances annuelles, pics thermiques
+\end{itemize}
+
+\end{document}

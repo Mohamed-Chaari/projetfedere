@@ -32,15 +32,15 @@ import requests
 from dotenv import load_dotenv
 from kafka import KafkaProducer
 
-from src.utils.cities import (
+from shared_logic.utils.cities import (
     get_all_cities,
     get_governorate_capitals,
     get_cities_by_governorate,
     list_governorates,
 )
-from src.utils.kafka_config import get_kafka_connection_config
-from src.utils.weather_codes import get_description
-from src.utils.validator import validate_message, build_dlq_message
+from shared_logic.utils.kafka_config import get_kafka_connection_config
+from shared_logic.utils.weather_codes import get_description
+from shared_logic.utils.validator import validate_message, build_dlq_message
 
 load_dotenv()
 
