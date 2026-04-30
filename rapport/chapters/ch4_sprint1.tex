@@ -1,264 +1,73 @@
 % ══════════════════════════════════════════
 %  CHAPITRE 4 — SPRINT 1
 % ══════════════════════════════════════════
-\chapter{Sprint 1~: Infrastructure Cloud et Flux Temps Réel}
+\chapter{Sprint 1 « Fondations \& Flux Temps Réel »}
 
 \section{Introduction}
-Le premier sprint marque le lancement technique du projet. L'objectif est de mettre en place une architecture robuste et évolutive en s'appuyant sur des services Cloud (SaaS/PaaS). Cette phase se concentre sur la création de la base de données sur Supabase, la configuration du broker de messages Kafka via Aiven, et le développement du socle de l'API permettant de faire circuler les premières données météorologiques de bout en bout.
+L'objectif de ce premier sprint est de mettre en place l'architecture Cloud (Supabase, Kafka Aiven) et d'activer le flux de données en temps réel pour alimenter l'interface web.
 
-\section{Objectif du Sprint et Sprint Backlog}
+\section{Objectif attendu et identification des tâches}
 
 \subsection{Objectif attendu}
-Déployer l'infrastructure Cloud, charger l'historique météo (2020--2024) pour les 221 villes, et activer le flux d'ingestion en temps réel pour alimenter un tableau de bord dynamique et sécurisé.
+Déployer la base de données, configurer Kafka, charger l'historique météo et afficher les données en temps réel sur le tableau de bord.
 
 \subsection{Sprint Backlog}
-
-\begin{table}[H]
-\centering
-\caption{Sprint Backlog — Sprint 1}
-\label{tab:sprint1_backlog}
-\begin{tabularx}{\textwidth}{clX}
-\toprule
-\textbf{US} & \textbf{Catégorie} & \textbf{Description} \\
-\midrule
-US1 & Infrastructure & Configuration de Supabase (PostgreSQL) et Aiven (Kafka) \\
-US2 & Ingestion      & Développement du Producer live et du Consumer vers la DB \\
-US3 & API Core       & Création des endpoints \texttt{/summary} et \texttt{/forecast} \\
-US4 & Sécurité       & Mise en place de l'authentification JWT \\
-US5 & UI/UX          & Intégration du Dashboard et des graphiques de prévisions \\
-US6 & Qualité        & Validation des flux et rédaction du plan de test \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{Analyse et Spécification}
-
-\subsection{Diagramme de cas d'utilisation du Sprint 1}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:uc_sprint1} — Cas d'utilisation Sprint 1}{Diagramme UML avec acteurs Administrateur, Système et Utilisateur. Cas~: Configurer Infrastructure, Ingérer Données Historiques, Consulter Dashboard, S'authentifier}
-\caption{Diagramme de cas d'utilisation — Sprint 1}
-\label{fig:uc_sprint1}
-\end{figure}
-
-\subsection{Description textuelle des cas d'utilisation}
-
-\begin{table}[H]
-\centering
-\caption{Cas d'utilisation — Consulter les données temps réel (US5)}
-\label{tab:uc_dashboard}
-\begin{tabularx}{\textwidth}{lX}
-\toprule
-\textbf{Élément} & \textbf{Description} \\
-\midrule
-Acteur         & Utilisateur \\
-Pré-conditions & L'utilisateur est authentifié ; les flux Aiven/Supabase sont actifs \\
-Scénario nominal & 1. L'utilisateur accède au dashboard \\
-               & 2. Le système appelle l'API \texttt{/api/dashboard/summary} \\
-               & 3. L'interface affiche les KPIs météo mis à jour \\
-Post-conditions & Les données sont affichées avec la dernière mise à jour \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\begin{table}[H]
-\centering
-\caption{Cas d'utilisation — S'authentifier (US4)}
-\label{tab:uc_auth}
-\begin{tabularx}{\textwidth}{lX}
-\toprule
-\textbf{Élément} & \textbf{Description} \\
-\midrule
-Acteur         & Utilisateur \\
-Scénario nominal & 1. Saisie des identifiants (email + mot de passe) \\
-               & 2. Vérification dans la table \texttt{users} de Supabase \\
-               & 3. Génération et renvoi d'un token JWT \\
-Scénario alternatif & Identifiants incorrects $\rightarrow$ message d'erreur \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{Conception}
-
-\subsection{Conception de la base de données}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:schema_db} — Schéma relationnel Supabase}{Schéma montrant les 8 tables~: weather\_historical, weather\_current, weather\_forecast, monthly\_averages, correlations, temperature\_peaks, annual\_stats, pipeline\_runs avec leurs relations et clés}
-\caption{Schéma relationnel de la base de données Supabase}
-\label{fig:schema_db}
-\end{figure}
-
-\subsection{Dictionnaire de données}
-
-\begin{table}[H]
-\centering
-\caption{Dictionnaire de données — Table \texttt{weather\_historical}}
-\label{tab:dict_data}
-\begin{tabularx}{\textwidth}{llcX}
-\toprule
-\textbf{Colonne} & \textbf{Type} & \textbf{Nullable} & \textbf{Description} \\
-\midrule
-id            & SERIAL     & Non & Identifiant auto-incrémenté \\
-date          & DATE       & Non & Date de la mesure \\
-city          & VARCHAR    & Non & Nom de la ville \\
-governorate   & VARCHAR    & Oui & Gouvernorat \\
-region        & VARCHAR    & Oui & Région (Nord, Centre, Sud) \\
-temperature   & REAL       & Oui & Température en °C \\
-humidity      & REAL       & Oui & Humidité relative en \% \\
-precipitation & REAL       & Oui & Précipitations en mm \\
-wind\_speed   & REAL       & Oui & Vitesse du vent en km/h \\
-ingested\_at  & TIMESTAMPTZ & Oui & Horodatage d'ingestion \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\subsection{Diagrammes de séquence}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:seq_ingestion} — Séquence d'ingestion}{Diagramme de séquence~: API Open-Meteo $\rightarrow$ Producer Python $\rightarrow$ Topic Kafka (Aiven) $\rightarrow$ Consumer Python $\rightarrow$ Supabase PostgreSQL avec batch upsert}
-\caption{Diagramme de séquence — Flux d'ingestion historique}
-\label{fig:seq_ingestion}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:seq_realtime} — Séquence temps réel}{Diagramme de séquence~: Scheduler (15 min) $\rightarrow$ Producer $\rightarrow$ Kafka topic weather-current $\rightarrow$ Consumer $\rightarrow$ DB $\rightarrow$ API $\rightarrow$ Dashboard auto-refresh}
-\caption{Diagramme de séquence — Flux temps réel (rafraîchissement 15 min)}
-\label{fig:seq_realtime}
-\end{figure}
-
-\subsection{Prototypes d'interfaces}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:wireframe_login} — Wireframe Login}{Maquette de la page login.html~: formulaire centré avec champs email et mot de passe, bouton de connexion, thème sombre}
-\caption{Wireframe — Page de connexion}
-\label{fig:wireframe_login}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:wireframe_dashboard} — Wireframe Dashboard}{Maquette du dashboard~: grille de cartes KPI (température, humidité, vent), carte Leaflet.js, graphiques temporels Plotly.js}
-\caption{Wireframe — Dashboard principal}
-\label{fig:wireframe_dashboard}
-\end{figure}
-
-\section{Implémentation}
-
-\subsection{Environnement de développement}
-
-\begin{table}[H]
-\centering
-\caption{Environnement technique — Sprint 1}
-\label{tab:env_sprint1}
-\begin{tabularx}{\textwidth}{lX}
-\toprule
-\textbf{Composant} & \textbf{Technologie} \\
-\midrule
-Langage          & Python 3.10 \\
-Base de données  & PostgreSQL 15 via Supabase (Session Pooler) \\
-Broker messages  & Apache Kafka 3.x via Aiven (SSL) \\
-API              & FastAPI + Uvicorn \\
-Frontend         & HTML5, CSS3, JavaScript, Plotly.js, Leaflet.js \\
-Bibliothèques   & kafka-python-ng, psycopg2, SQLAlchemy, pandas \\
-Versioning       & Git + GitHub \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\subsection{Infrastructure Kafka sur Aiven}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:aiven_console} — Console Aiven}{Capture d'écran de la console Aiven montrant le service Kafka avec les topics créés et la configuration SSL}
-\caption{Console Aiven — Service Kafka configuré}
-\label{fig:aiven_console}
-\end{figure}
-
-Trois topics ont été créés~:
 \begin{itemize}
-  \item \texttt{weather-historical}~: données historiques (2020--2024)
-  \item \texttt{weather-current}~: mesures temps réel (toutes les 15 min)
-  \item \texttt{weather-forecast}~: prévisions à 7 jours
+    \item \textbf{US1 :} Configuration de Supabase et Aiven (Kafka).
+    \item \textbf{US2 :} Développement du Producer et Consumer (pipeline).
+    \item \textbf{US3 :} Création de l'API REST avec FastAPI.
+    \item \textbf{US4 :} Authentification sécurisée des utilisateurs (JWT).
+    \item \textbf{US5 :} Création du Dashboard interactif.
+    \item \textbf{US6 :} Tests de validation de l'ingestion.
 \end{itemize}
 
-\subsection{Base de données Supabase}
+\section{Analyse détaillée des besoins}
 
+\subsection{Diagramme de cas d'utilisation}
 \begin{figure}[H]
 \centering
-\imgplaceholder{Figure~\ref{fig:supabase_tables} — Tables Supabase}{Capture d'écran de l'éditeur SQL Supabase montrant les tables créées et le nombre de lignes}
-\caption{Tables de la base de données sur Supabase}
-\label{fig:supabase_tables}
+\imgplaceholder{Figure~\ref{fig:uc_sprint1}}{Diagramme de cas d'utilisation du Sprint 1}
+\caption{Diagramme de cas d'utilisation — Sprint 1}
 \end{figure}
 
-\subsection{Pipeline de données (Producer et Consumer)}
+\subsection{Descriptions textuelles}
+\textbf{Cas d'utilisation « S'authentifier »} : L'utilisateur entre son email et son mot de passe sur la page de connexion. Le système vérifie ces données dans la base Supabase et retourne un jeton (token) JWT en cas de succès pour sécuriser la session.
 
-Le Producer supporte trois modes d'exécution~:
+\textbf{Cas d'utilisation « Consulter Dashboard »} : L'utilisateur ouvre le dashboard. L'interface récupère les données via l'API FastAPI et affiche les informations météorologiques actuelles de manière dynamique.
 
-\begin{lstlisting}[language=Python,caption={Extrait du Producer tri-mode}]
-# Mode 1: Historique (2020-2024)
-def produce_historical(cities, start_date, end_date):
-    for city in cities:
-        data = fetch_open_meteo_historical(city, start_date, end_date)
-        for record in data:
-            producer.send('weather-historical', value=record)
-
-# Mode 2: Temps reel (toutes les 15 min)
-def produce_current(cities):
-    for city in cities:
-        data = fetch_owm_current(city)
-        producer.send('weather-current', value=data)
-
-# Mode 3: Previsions 7 jours
-def produce_forecast(cities):
-    for city in cities:
-        data = fetch_open_meteo_forecast(city)
-        producer.send('weather-forecast', value=data)
-\end{lstlisting}
-
+\section{Prototypes d'interfaces}
 \begin{figure}[H]
 \centering
-\imgplaceholder{Figure~\ref{fig:producer_run} — Exécution du Producer}{Capture d'écran du terminal montrant le Producer envoyant des messages vers les topics Kafka}
-\caption{Exécution du Producer — Envoi des données historiques}
-\label{fig:producer_run}
+\imgplaceholder{Figure~\ref{fig:wireframe_dashboard}}{Maquette simplifiée du dashboard}
+\caption{Maquette du Dashboard principal}
 \end{figure}
 
-\subsection{API REST FastAPI}
+\section{Modélisation conceptuelle}
 
+\subsection{Diagramme de classes}
 \begin{figure}[H]
 \centering
-\imgplaceholder{Figure~\ref{fig:swagger} — Swagger UI}{Capture d'écran de la documentation Swagger de l'API FastAPI avec les endpoints /summary, /forecast, /auth}
-\caption{Documentation Swagger de l'API FastAPI}
-\label{fig:swagger}
+\imgplaceholder{Figure~\ref{fig:schema_db}}{Diagramme de classes du Sprint 1}
+\caption{Diagramme de classes - Sprint 1}
 \end{figure}
 
-\subsection{Interface UI (Dashboard)}
-
+\subsection{Diagrammes de séquence}
 \begin{figure}[H]
 \centering
-\imgplaceholder{Figure~\ref{fig:dashboard_final} — Dashboard final Sprint 1}{Capture d'écran du dashboard avec cartes KPI, carte Leaflet et graphiques Plotly.js en thème sombre}
-\caption{Dashboard Météo Tunisie — Sprint 1}
-\label{fig:dashboard_final}
+\imgplaceholder{Figure~\ref{fig:seq_realtime}}{Diagramme de séquence Ingestion Temps Réel}
+\caption{Diagramme de séquence — Ingestion en temps réel}
 \end{figure}
 
-\section{Tests et Validation du Sprint 1}
-
-\begin{table}[H]
+\section{Réalisation}
+\subsection{Capture d'écran}
+\begin{figure}[H]
 \centering
-\caption{Résultats des tests — Sprint 1}
-\label{tab:tests_sprint1}
-\begin{tabularx}{\textwidth}{clXc}
-\toprule
-\textbf{ID} & \textbf{Type} & \textbf{Description} & \textbf{Résultat} \\
-\midrule
-TC-01 & Unitaire     & Validation du token JWT                        & \ding{51} \\
-TC-02 & Intégration  & Persistance des données après envoi Kafka       & \ding{51} \\
-TC-03 & Fonctionnel  & Affichage des KPIs sur le dashboard              & \ding{51} \\
-TC-04 & Performance  & Ingestion de 221 villes en $<$30s               & \ding{51} \\
-TC-05 & Sécurité     & Connexion SSL Kafka avec certificats Aiven       & \ding{51} \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\imgplaceholder{Figure~\ref{fig:dashboard_final}}{Capture d'écran du résultat final du Dashboard}
+\caption{Résultat du Dashboard — Sprint 1}
+\end{figure}
+
+\section{Tests et validations}
+Nous avons testé le bon fonctionnement de l'authentification JWT et de l'ingestion des messages Kafka. Les données arrivent correctement et rapidement dans notre base Supabase et s'affichent sur l'interface sans aucune erreur.
+
+\section{Conclusion}
+Ce sprint nous a permis de valider la fiabilité de l'architecture de base. Le système est maintenant stable, connecté, et prêt à recevoir des fonctionnalités d'analyse plus poussées lors du prochain sprint.

@@ -4,115 +4,96 @@
 \chapter{Méthodologie Scrum et Spécifications Globales}
 
 \section{Présentation de la démarche Scrum}
-Le projet a été mené selon la méthodologie agile \textbf{Scrum}, structurée en deux sprints de durée égale. Cette approche itérative nous a permis de livrer un incrément fonctionnel à chaque fin de sprint et d'adapter les priorités en fonction des retours.
+Pour la réalisation de ce projet, nous avons adopté la méthodologie agile \textbf{Scrum}. Cette méthode nous a permis de travailler de manière itérative, en divisant le travail en deux "Sprints".
 
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:scrum_cycle} — Cycle Scrum}{Diagramme illustrant le cycle Scrum avec Product Backlog, Sprint Planning, Daily Scrum, Sprint Review et Retrospective}
-\caption{Cycle de développement Scrum appliqué au projet}
-\label{fig:scrum_cycle}
-\end{figure}
-
-\textbf{Rôles~:}
+\textbf{L'équipe Scrum :}
 \begin{itemize}
-  \item \textbf{Product Owner}~: Mme Nesrine [Nom] (encadrante)
-  \item \textbf{Scrum Master}~: Mohamed Chaari
-  \item \textbf{Équipe de développement}~: Mohamed, Yessine, Moataz, Brahim
+  \item \textbf{Product Owner} : Mme Nesrine (encadrante)
+  \item \textbf{Scrum Master} : Mohamed Chaari
+  \item \textbf{Équipe de développement} : Mohamed Chaari, Brahim Hosni, Mohamed Karim Hentati, Moataz Hili, Yassine Lahyani et Yessine Trabelsi
 \end{itemize}
 
-\section{Identification des acteurs}
+\section{Exigences fonctionnelles et acteurs}
 
-\begin{table}[H]
-\centering
-\caption{Acteurs du système}
-\label{tab:acteurs}
-\begin{tabularx}{\textwidth}{lX}
-\toprule
-\textbf{Acteur} & \textbf{Description} \\
-\midrule
-Utilisateur    & Consulte le dashboard, les prévisions et les analyses \\
-Administrateur & Gère l'infrastructure Cloud et les configurations \\
-Analyste       & Consulte les analyses statistiques avancées et les alertes \\
-Système        & Exécute automatiquement les pipelines et les DAGs \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{Besoins fonctionnels et non fonctionnels globaux}
-
-\subsection{Besoins fonctionnels}
+\textbf{Acteurs du système :}
 \begin{enumerate}
-  \item Collecter les données météo historiques (2020--2024) et temps réel pour 221 villes.
-  \item Ingérer les données via un système de streaming fiable (Kafka).
-  \item Stocker les données dans une base PostgreSQL Cloud (Supabase).
-  \item Orchestrer les analyses automatisées (moyennes, corrélations, pics, tendances).
-  \item Exposer les données via une API REST documentée.
-  \item Afficher les résultats dans un dashboard interactif avec cartes et graphiques.
+    \item \textbf{Utilisateur Final} (Visiteur web/mobile)
+    \item \textbf{Analyste Météo / Climatologue} (Utilisateur avancé)
+    \item \textbf{Data Engineer / Administrateur Système}
+    \item \textbf{Systèmes} (API Météo externe et Apache Airflow interne)
 \end{enumerate}
 
-\subsection{Besoins non fonctionnels}
+\textbf{Exigences fonctionnelles :}
 \begin{itemize}
-  \item \textbf{Performance}~: Ingestion de $>$200 enregistrements/batch sans perte.
-  \item \textbf{Disponibilité}~: Infrastructure Cloud avec haute disponibilité (Supabase, Aiven).
-  \item \textbf{Sécurité}~: Connexions SSL pour Kafka, mots de passe chiffrés.
-  \item \textbf{Maintenabilité}~: Code modulaire avec tests unitaires ($>$100 tests).
-  \item \textbf{Scalabilité}~: Architecture découplée permettant l'ajout de nouvelles villes ou sources.
+    \item Collecter et ingérer les données météorologiques (Historique, Temps Réel, Prévisions).
+    \item Consulter les conditions actuelles, l'historique et les prévisions sur un tableau de bord.
+    \item Filtrer les données par gouvernorat (24 capitales régionales).
+    \item Détecter les anomalies climatiques (pics de température/vent) et générer des alertes.
+    \item Calculer des statistiques avancées (moyennes, corrélations).
+    \item Superviser l'infrastructure (Kafka, DAGs Airflow) et la qualité des données.
 \end{itemize}
 
-\section{Diagramme de cas d'utilisation global}
-
+\subsection{Diagramme de cas d'utilisation global}
 \begin{figure}[H]
 \centering
-\imgplaceholder{Figure~\ref{fig:uc_global} — Diagramme de cas d'utilisation global}{Diagramme UML montrant les 4 acteurs (Utilisateur, Administrateur, Analyste, Système) et les cas d'utilisation principaux~: Consulter Dashboard, Voir Prévisions, Analyser Tendances, Recevoir Alertes, Configurer Infrastructure, Exécuter Pipeline}
+\imgplaceholder{Figure~\ref{fig:uc_global} — Cas d'utilisation global}{Insérer ici le diagramme de cas d'utilisation global}
 \caption{Diagramme de cas d'utilisation global}
 \label{fig:uc_global}
 \end{figure}
 
-\section{Product Backlog complet}
+\section{Exigences non fonctionnelles}
+\begin{itemize}
+    \item \textbf{Performance :} Actualisation fluide en temps réel (15 min) sans recharger la page.
+    \item \textbf{Scalabilité :} Supporter l'ingestion massive via Kafka et l'orchestration via Airflow.
+    \item \textbf{Sécurité :} Accès protégé et réservé aux administrateurs pour l'infrastructure.
+    \item \textbf{Ergonomie :} Interface intuitive et Responsive Design.
+    \item \textbf{Traçabilité :} Isolation et journalisation des anomalies dans les flux de données.
+\end{itemize}
+
+\section{Le Backlog Produit}
+Le Backlog Produit liste toutes les fonctionnalités à développer (User Stories - US), classées par priorité.
 
 \begin{table}[H]
 \centering
-\caption{Product Backlog — Liste des User Stories}
+\caption{Backlog Produit}
 \label{tab:backlog}
-\begin{tabularx}{\textwidth}{clXcc}
-\toprule
-\textbf{US} & \textbf{Sprint} & \textbf{Description} & \textbf{Priorité} & \textbf{Points} \\
-\midrule
-US1 & S1 & Configuration de Supabase et Aiven            & Haute & 8 \\
-US2 & S1 & Producer live et Consumer vers la DB            & Haute & 13 \\
-US3 & S1 & Endpoints API /summary et /forecast             & Moyenne & 8 \\
-US4 & S1 & Authentification JWT                             & Moyenne & 5 \\
-US5 & S1 & Dashboard et graphiques de prévisions            & Haute & 13 \\
-US6 & S1 & Validation des flux et plan de test              & Basse & 3 \\
-\midrule
-US7 & S2 & DAGs Airflow (moyennes, corrélations)            & Haute & 13 \\
-US8 & S2 & Détection de pics (canicule, tempêtes)            & Haute & 8 \\
-US9 & S2 & Documentation, monitoring et livraison finale     & Moyenne & 5 \\
-\bottomrule
+\begin{tabularx}{\textwidth}{|c|X|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US1 & \textbf{Admin :} Configurer Supabase et Kafka (Aiven), et charger 5 ans d'historique. & Haute \\
+\hline
+US2 & \textbf{Système :} Ingérer automatiquement les données live (15 min) et les prévisions (6 h). & Haute \\
+\hline
+US3 & \textbf{Développeur :} Disposer d'endpoints API performants avec FastAPI. & Haute \\
+\hline
+US4 & \textbf{Utilisateur :} Se connecter de manière sécurisée (JWT) à la plateforme. & Haute \\
+\hline
+US5 & \textbf{Utilisateur :} Visualiser les conditions actuelles et les prévisions sur un dashboard. & Haute \\
+\hline
+US6 & \textbf{Qualité :} Valider l'intégrité des flux et rédiger la documentation et les tests. & Haute \\
+\hline
+US7 & \textbf{Analyste :} Consulter les statistiques et recevoir des alertes météo (pics). & Haute \\
+\hline
+US8 & \textbf{Utilisateur :} Avoir une interface fluide, sans bugs et un système supervisé. & Haute \\
+\hline
+US9 & \textbf{Responsable :} Consolider les tests, le code final et livrer le projet complet. & Haute \\
+\hline
 \end{tabularx}
 \end{table}
 
-\section{Architecture globale du système}
-
-\begin{figure}[H]
-\centering
-\imgplaceholder{Figure~\ref{fig:archi_globale} — Architecture globale du pipeline}{Diagramme d'architecture montrant~: APIs Météo $\rightarrow$ Producer Python $\rightarrow$ Aiven Kafka $\rightarrow$ Consumer Python $\rightarrow$ Supabase PostgreSQL $\rightarrow$ Airflow DAGs $\rightarrow$ FastAPI $\rightarrow$ Dashboard Frontend}
-\caption{Architecture globale du système Météo Tunisie}
-\label{fig:archi_globale}
-\end{figure}
-
-\section{Planification des Sprints}
-
+\section{Planification des sprints}
 \begin{table}[H]
 \centering
-\caption{Répartition des Sprints}
+\caption{Planification des Sprints}
 \label{tab:sprints}
-\begin{tabularx}{\textwidth}{lXl}
-\toprule
-\textbf{Sprint} & \textbf{Objectif} & \textbf{User Stories} \\
-\midrule
-Sprint 1 & Infrastructure Cloud et Flux Temps Réel    & US1 à US6 \\
-Sprint 2 & Analyses Avancées, Alertes et Déploiement   & US7 à US9 \\
-\bottomrule
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\textbf{Sprint} & \textbf{User Stories intégrées} & \textbf{Durée} \\
+\hline
+Sprint 1 : Fondations \& Flux Temps Réel & US1, US2, US3, US4, US5, US6 & 2 semaines \\
+\hline
+Sprint 2 : Analyses \& Déploiement & US7, US8, US9 & 2 semaines \\
+\hline
 \end{tabularx}
 \end{table}

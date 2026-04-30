@@ -1,82 +1,44 @@
-% CHAPITRE 6 — TESTS GLOBAUX
+% ══════════════════════════════════════════
+%  CHAPITRE 6 — TESTS GLOBAUX
+% ══════════════════════════════════════════
 \chapter{Tests Globaux et Validation Finale}
 
 \section{Stratégie globale de test}
-La stratégie de test couvre quatre niveaux~: tests unitaires, tests d'intégration, tests de qualité des données et tests de performance. L'objectif est de garantir la fiabilité du pipeline de bout en bout.
+Afin de garantir le bon fonctionnement de notre plateforme, nous avons mis en place une stratégie de test couvrant l'ensemble du projet : du code source jusqu'à l'interface visuelle.
 
-\section{Tests unitaires consolidés (pytest)}
-
-\begin{lstlisting}[language=bash,caption={Exécution des tests unitaires}]
-$ pytest tests/ -v --cov=src --cov-report=term-missing
-======================== 125 passed in 12.4s ========================
-\end{lstlisting}
-
-\begin{table}[H]\centering\caption{Couverture des tests unitaires}\label{tab:coverage}
-\begin{tabularx}{\textwidth}{Xcccc}\toprule
-\textbf{Module} & \textbf{Tests} & \textbf{Passés} & \textbf{Couverture} \\\midrule
-\texttt{src/utils/db.py} & 12 & 12 & 89\% \\
-\texttt{src/utils/cities.py} & 18 & 18 & 95\% \\
-\texttt{src/utils/validator.py} & 15 & 15 & 92\% \\
-\texttt{src/utils/kafka\_config.py} & 10 & 10 & 88\% \\
-\texttt{src/producer.py} & 35 & 35 & 85\% \\
-\texttt{src/consumer.py} & 20 & 20 & 82\% \\
-\texttt{src/utils/weather\_codes.py} & 8 & 8 & 100\% \\
-\midrule
-\textbf{Total} & \textbf{125} & \textbf{125} & \textbf{87\%} \\\bottomrule
-\end{tabularx}\end{table}
-
-\begin{figure}[H]\centering
-\imgplaceholder{Résultats pytest}{Capture d'écran du terminal montrant les 125 tests passés avec couverture}
-\caption{Résultats des tests unitaires — pytest}\label{fig:pytest}\end{figure}
-
-\section{Tests d'intégration (pipeline E2E)}
-Le test d'intégration valide le flux complet~: Kafka $\rightarrow$ DB $\rightarrow$ API $\rightarrow$ Frontend.
-
-\begin{table}[H]\centering\caption{Tests d'intégration E2E}\label{tab:e2e}
-\begin{tabularx}{\textwidth}{clXc}\toprule
-\textbf{ID} & \textbf{Flux} & \textbf{Description} & \textbf{OK} \\\midrule
-E2E-01 & Historique & Producer envoie 221 villes $\rightarrow$ Consumer persiste $\rightarrow$ API retourne & \ding{51} \\
-E2E-02 & Temps réel & OWM API $\rightarrow$ Kafka $\rightarrow$ DB $\rightarrow$ Dashboard refresh & \ding{51} \\
-E2E-03 & Prévisions & Open-Meteo $\rightarrow$ Kafka $\rightarrow$ DB $\rightarrow$ /forecast endpoint & \ding{51} \\
-E2E-04 & Analyses & Airflow DAG $\rightarrow$ Supabase $\rightarrow$ API $\rightarrow$ Plotly.js & \ding{51} \\\bottomrule
-\end{tabularx}\end{table}
-
-\section{Tests de qualité des données}
-Le DAG \texttt{data\_quality\_monitor} vérifie quotidiennement~:
+\section{Tests unitaires}
+Les tests unitaires permettent de vérifier chaque petite partie du code indépendamment. Nous avons utilisé l'outil \texttt{pytest} en Python.
 \begin{itemize}
-  \item \textbf{Complétude}~: absence de valeurs NULL sur les champs critiques
-  \item \textbf{Validité}~: température dans $[-5°C, 55°C]$
-  \item \textbf{Unicité}~: absence de doublons (date, city)
-  \item \textbf{Fraîcheur}~: dernière ingestion $< 48$h
+    \item \textbf{Résultat} : 100\% de nos tests critiques (125 tests) ont réussi.
+    \item Les calculs statistiques, la connexion à la base de données et les règles de validation des données fonctionnent tous correctement.
 \end{itemize}
 
-\begin{figure}[H]\centering
-\imgplaceholder{Quality scores}{Capture montrant les scores de qualité par couche (historical, current, forecast)}
-\caption{Scores de qualité des données}\label{fig:quality}\end{figure}
+\section{Tests d'intégration}
+Le test d'intégration s'assure que les différents outils communiquent bien entre eux.
+\begin{table}[H]
+\centering
+\caption{Validation des flux de l'application}
+\begin{tabularx}{\textwidth}{|l|X|c|}
+\hline
+\textbf{Étape testée} & \textbf{Vérification} & \textbf{Statut} \\
+\hline
+Kafka $\rightarrow$ Base de données & Les messages Kafka sont bien enregistrés dans Supabase. & \ding{51} OK \\
+\hline
+Base de données $\rightarrow$ API & L'API arrive à lire les données depuis Supabase sans erreur. & \ding{51} OK \\
+\hline
+API $\rightarrow$ Dashboard & Le site web affiche correctement les données envoyées par l'API. & \ding{51} OK \\
+\hline
+Airflow $\rightarrow$ Alertes & Les analyses Airflow détectent les pics et créent des alertes visuelles. & \ding{51} OK \\
+\hline
+\end{tabularx}
+\end{table}
 
 \section{Tests de performance}
+Pour vérifier si notre application est fluide, nous avons mesuré plusieurs temps de réponse :
+\begin{itemize}
+    \item \textbf{Ingestion de données} : L'enregistrement des données temps réel de 221 villes prend moins de 10 secondes.
+    \item \textbf{Affichage Web} : Le temps de chargement du tableau de bord est rapide, généralement inférieur à 2 secondes.
+\end{itemize}
 
-\begin{table}[H]\centering\caption{Métriques de performance}\label{tab:perf}
-\begin{tabularx}{\textwidth}{Xlc}\toprule
-\textbf{Métrique} & \textbf{Valeur mesurée} & \textbf{Objectif} \\\midrule
-Ingestion historique (221 villes $\times$ 5 ans) & 25s & $<$ 60s \\
-Ingestion temps réel (221 villes) & 8s & $<$ 30s \\
-Exécution DAG monthly\_analysis & 12s & $<$ 60s \\
-Exécution DAG peak\_detection & 18s & $<$ 60s \\
-Latence API /summary & 120ms & $<$ 500ms \\
-Chargement Dashboard & 1.2s & $<$ 3s \\\bottomrule
-\end{tabularx}\end{table}
-
-\section{Résultats et métriques — Bilan de vélocité}
-
-\begin{table}[H]\centering\caption{Vélocité de l'équipe}\label{tab:velocity}
-\begin{tabularx}{\textwidth}{Xccc}\toprule
-\textbf{Sprint} & \textbf{Points planifiés} & \textbf{Points livrés} & \textbf{Vélocité} \\\midrule
-Sprint 1 & 50 & 50 & 100\% \\
-Sprint 2 & 26 & 26 & 100\% \\\midrule
-\textbf{Total} & \textbf{76} & \textbf{76} & \textbf{100\%} \\\bottomrule
-\end{tabularx}\end{table}
-
-\begin{figure}[H]\centering
-\imgplaceholder{Burndown chart}{Graphique burndown montrant la progression des deux sprints}
-\caption{Burndown Chart — Sprints 1 et 2}\label{fig:burndown}\end{figure}
+\section{Bilan du projet et validation}
+Grâce à la méthode Scrum, l'équipe a pu terminer l'ensemble des fonctionnalités prévues (User Stories) dans les temps, respectant ainsi nos objectifs initiaux pour les deux sprints. Tous les tests sont concluants, la plateforme est donc validée et prête à être utilisée en conditions réelles.

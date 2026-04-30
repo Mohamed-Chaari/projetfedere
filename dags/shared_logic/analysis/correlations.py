@@ -6,8 +6,6 @@ import itertools
 import logging
 
 from airflow.exceptions import AirflowSkipException
-import pandas as pd
-import scipy.stats
 from psycopg2.extras import execute_batch
 
 from ..utils.db import get_connection, get_engine
@@ -29,6 +27,9 @@ def check_min_data_fn():
 
 
 def compute_correlations_fn():
+    import pandas as pd
+    import scipy.stats
+
     engine = get_engine()
     query = "SELECT date, temperature, humidity, precipitation, wind_speed FROM weather_historical"
     df = pd.read_sql(query, engine)

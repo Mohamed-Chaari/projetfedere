@@ -4,74 +4,28 @@
 \chapter{État de l'Art}
 
 \section{Systèmes météorologiques existants}
-Plusieurs plateformes offrent des données météorologiques à l'échelle mondiale~:
+Il existe de nombreuses sources de données météorologiques. Pour ce projet, nous avons comparé plusieurs solutions :
+\begin{itemize}
+    \item \textbf{Open-Meteo} : Une API gratuite offrant un historique riche sans clé d'accès (Choix principal).
+    \item \textbf{OpenWeatherMap} : Une API très populaire, utile pour les données en temps réel (Choix secondaire).
+    \item \textbf{Météo-France / INM Tunisie} : Données précises mais accès souvent payant ou limité.
+\end{itemize}
 
-\begin{table}[H]
-\centering
-\caption{Comparaison des sources de données météorologiques}
-\label{tab:sources_meteo}
-\begin{tabularx}{\textwidth}{lXccc}
-\toprule
-\textbf{Source} & \textbf{Description} & \textbf{Gratuit} & \textbf{Historique} & \textbf{Temps réel} \\
-\midrule
-Open-Meteo       & API open-source, données ECMWF   & \ding{51} & \ding{51} & \ding{51} \\
-OpenWeatherMap    & API freemium, large couverture   & Partiel   & \ding{51} & \ding{51} \\
-Météo-France      & Service national français        & \ding{55} & \ding{51} & \ding{51} \\
-Copernicus (ERA5) & Données satellite réanalyse      & \ding{51} & \ding{51} & \ding{55} \\
-INM Tunisie       & Institut National de la Météo    & \ding{55} & Limité    & Limité    \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\section{Technologies Big Data choisies}
+Pour traiter ce grand volume de données, nous avons sélectionné les technologies suivantes :
+\begin{itemize}
+    \item \textbf{Apache Kafka} : Utilisé pour recevoir les données en continu (streaming) sans surcharger le système.
+    \item \textbf{Apache Airflow} : Permet d'automatiser et de planifier les calculs tous les jours.
+    \item \textbf{PostgreSQL (Supabase)} : Une base de données cloud très performante pour stocker tout l'historique météo de manière sécurisée.
+\end{itemize}
 
-Notre choix s'est porté sur \textbf{Open-Meteo} comme source principale (gratuit, sans clé API, haute résolution) et \textbf{OpenWeatherMap} comme source de secours pour les données temps réel.
-
-\section{Technologies Big Data pour les données météo}
-
-\subsection{Apache Kafka}
-Apache Kafka est une plateforme de streaming distribué conçue pour gérer des flux de données à haut débit. Dans notre contexte, Kafka assure le découplage entre les producteurs de données météo et les consommateurs qui les persistent en base.
-
-\subsection{Apache Airflow}
-Apache Airflow est un orchestrateur de workflows qui permet de définir, planifier et surveiller des pipelines de données sous forme de DAGs (Directed Acyclic Graphs). Il est particulièrement adapté aux traitements batch analytiques.
-
-\subsection{PostgreSQL et Supabase}
-PostgreSQL est le SGBD relationnel open-source le plus avancé. Supabase fournit une couche managée (PaaS) avec API REST automatique, authentification et stockage objet.
-
-\section{Architectures streaming (Lambda, Kappa)}
-
-\begin{table}[H]
-\centering
-\caption{Comparaison des architectures de traitement de données}
-\label{tab:archi}
-\begin{tabularx}{\textwidth}{lXX}
-\toprule
-\textbf{Architecture} & \textbf{Avantages} & \textbf{Inconvénients} \\
-\midrule
-Lambda  & Double couche batch + stream, résultats fiables & Complexité de maintenance, code dupliqué \\
-Kappa   & Architecture simplifiée, un seul pipeline stream & Reprocessing coûteux, moins adapté aux analyses lourdes \\
-Hybride & Flexibilité, adapté aux cas mixtes & Nécessite une bonne orchestration \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{Comparaison des solutions existantes}
-
-\begin{table}[H]
-\centering
-\caption{Positionnement de notre solution}
-\label{tab:positionnement}
-\begin{tabularx}{\textwidth}{lcccc}
-\toprule
-\textbf{Critère} & \textbf{Notre solution} & \textbf{Windy} & \textbf{Infoclimat} & \textbf{Weather.gov} \\
-\midrule
-Focus Tunisie         & \ding{51} & \ding{55} & \ding{55} & \ding{55} \\
-221 villes            & \ding{51} & \ding{55} & \ding{55} & \ding{55} \\
-Analyses statistiques & \ding{51} & \ding{55} & Partiel   & \ding{55} \\
-Détection de pics     & \ding{51} & \ding{55} & \ding{55} & \ding{55} \\
-Open-source           & \ding{51} & \ding{55} & \ding{55} & \ding{51} \\
-Pipeline automatisé   & \ding{51} & N/A       & \ding{55} & Partiel   \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\section{Comparaison avec les solutions existantes}
+Comparé à d'autres applications grand public, notre plateforme se démarque par :
+\begin{itemize}
+    \item \textbf{Une spécialisation locale} : Une couverture complète des 221 villes tunisiennes.
+    \item \textbf{Des analyses sur-mesure} : La plateforme ne se contente pas d'afficher le temps qu'il fait, elle calcule des statistiques et alerte automatiquement sur les pics de chaleur.
+    \item \textbf{Une architecture moderne} : L'utilisation de technologies Big Data permet au système de traiter énormément de données très rapidement.
+\end{itemize}
 
 \section{Positionnement de notre solution}
-Notre plateforme se distingue par sa spécialisation sur le territoire tunisien avec une couverture exhaustive de 221 villes, et par l'intégration d'analyses statistiques avancées (corrélations de Pearson, détection de pics par z-score, tendances de réchauffement) directement dans le pipeline de données orchestré par Airflow.
+Notre projet se positionne comme un outil complet, allant de la collecte des données brutes à l'analyse avancée, le tout centralisé sur un tableau de bord pensé pour des utilisateurs recherchant des informations météorologiques précises sur la Tunisie.

@@ -5,9 +5,6 @@ Shared annual statistics logic — used by both annual_stats_dag and master_pipe
 import calendar
 import logging
 
-import pandas as pd
-import numpy as np
-import scipy.stats
 from psycopg2.extras import execute_batch
 
 from ..utils.db import get_connection, get_engine
@@ -16,6 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 def compute_annual_stats_fn():
+    import pandas as pd
+    import numpy as np
+    import scipy.stats
+
     engine = get_engine()
     query = "SELECT * FROM weather_historical"
     df = pd.read_sql(query, engine)

@@ -162,11 +162,11 @@ Enfin, nous adressons nos remerciements à toutes les personnes qui ont contribu
 \addcontentsline{toc}{chapter}{Résumé}
 
 \textbf{Français :}\\
-Ce projet porte sur la conception et le développement d'une plateforme Big Data dédiée à la collecte, l'analyse et la visualisation des données météorologiques de 221 villes tunisiennes. L'architecture s'appuie sur un pipeline de streaming en temps réel utilisant Apache Kafka (Aiven) pour l'ingestion, Supabase (PostgreSQL) pour le stockage, Apache Airflow pour l'orchestration des analyses, et une API REST FastAPI pour l'exposition des données. Le système couvre l'historique météorologique de 2020 à 2024, l'ingestion temps réel toutes les 15 minutes, ainsi que des analyses avancées incluant la détection de pics thermiques, les corrélations saisonnières et les tendances annuelles.
+Ce projet présente la création d'une plateforme Big Data pour collecter, stocker et analyser les données météorologiques de 221 villes en Tunisie. En utilisant des technologies modernes comme Kafka, Airflow et FastAPI, la plateforme permet de suivre la météo en temps réel et de détecter des anomalies climatiques à travers un tableau de bord interactif.
 
 \vspace{0.8cm}
 \textbf{English:}\\
-This project focuses on designing and developing a Big Data platform for collecting, analyzing, and visualizing meteorological data from 221 Tunisian cities. The architecture relies on a real-time streaming pipeline using Apache Kafka (Aiven) for ingestion, Supabase (PostgreSQL) for storage, Apache Airflow for analysis orchestration, and a FastAPI REST API for data exposure. The system covers the weather history from 2020 to 2024, real-time ingestion every 15 minutes, and advanced analytics including thermal peak detection, seasonal correlations, and annual trends.
+This project presents the creation of a Big Data platform to collect, store, and analyze weather data from 221 cities in Tunisia. Using modern technologies like Kafka, Airflow, and FastAPI, the platform enables real-time weather tracking and climate anomaly detection through an interactive dashboard.
 
 \newpage
 
@@ -229,29 +229,23 @@ US      & User Story \\
 \addcontentsline{toc}{chapter}{Conclusion et Perspectives}
 
 \section*{Bilan du projet}
-Au terme de ce projet, nous avons conçu et déployé une plateforme Big Data complète dédiée à la météorologie tunisienne. Le système couvre l'intégralité du cycle de vie de la donnée~: collecte depuis les APIs Open-Meteo et OpenWeatherMap, ingestion en temps réel via Apache Kafka (Aiven), stockage persistant sur Supabase (PostgreSQL), orchestration analytique via Apache Airflow déployé sur Astronomer Cloud, et visualisation interactive à travers un dashboard responsive.
+Ce projet nous a permis de concevoir et déployer une plateforme complète de suivi météorologique pour la Tunisie. Nous avons réussi à combiner des outils modernes du Big Data (Kafka, Supabase, Airflow) pour créer un système fiable et très réactif.
 
-Les principaux résultats incluent~:
-\begin{itemize}
-  \item Couverture de \textbf{221 villes tunisiennes} avec un historique de 5 ans (2020--2024).
-  \item \textbf{6 DAGs Airflow} opérationnels~: analyses mensuelles, annuelles, détection de pics, corrélations saisonnières, qualité des données et pipeline maître.
-  \item \textbf{125 tests unitaires} validant l'ensemble des modules.
-  \item Un dashboard interactif avec thème sombre/clair et cartes Leaflet.js.
-\end{itemize}
+Aujourd'hui, l'application est fonctionnelle : elle collecte les données des 221 villes du pays, réalise des analyses statistiques de manière autonome, et affiche les résultats sur une interface web conviviale et intuitive.
 
-\section*{Limites et difficultés rencontrées}
+\section*{Difficultés rencontrées}
+Durant ce projet, nous avons dû surmonter plusieurs défis :
 \begin{itemize}
-  \item La gestion des connexions IPv6 sur le tier gratuit de Supabase a nécessité le recours au Session Pooler.
-  \item La synchronisation des certificats SSL Kafka entre l'environnement local et le conteneur Docker Astronomer.
-  \item Le volume de données (221 villes $\times$ 5 ans $\times$ 4 variables) impose des optimisations SQL pour les analyses.
+  \item Apprendre à configurer et interconnecter plusieurs services Cloud.
+  \item Gérer le grand volume de données tout en gardant un affichage web rapide.
 \end{itemize}
 
 \section*{Perspectives d'amélioration}
+Pour aller plus loin à l'avenir, plusieurs pistes d'amélioration sont envisageables :
 \begin{itemize}
-  \item Intégration de modèles de Machine Learning (LSTM, Prophet) pour la prévision météo.
-  \item Ajout d'un système de notifications push (Firebase) pour les alertes météo critiques.
-  \item Extension aux données satellite (Copernicus) pour une couverture spatiale plus fine.
-  \item Migration vers TimescaleDB pour optimiser les requêtes temporelles.
+  \item Intégrer des modèles d'Intelligence Artificielle pour améliorer les prévisions météo.
+  \item Développer une application mobile (Android/iOS) pour les utilisateurs finaux.
+  \item Ajouter un système de notifications par e-mail ou SMS en cas d'alerte météo majeure.
 \end{itemize}
 
 % ─────────────────────────────────────────
