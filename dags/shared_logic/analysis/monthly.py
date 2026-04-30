@@ -9,7 +9,7 @@ from airflow.exceptions import AirflowException
 import pandas as pd
 from psycopg2.extras import execute_batch
 
-from shared_logic.utils.db import get_connection, get_engine
+from ..utils.db import get_connection, get_engine
 
 logger = logging.getLogger(__name__)
 

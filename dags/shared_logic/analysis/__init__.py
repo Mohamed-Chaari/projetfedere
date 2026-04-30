@@ -1,11 +1,11 @@
 """
 Analysis modules — shared business logic for Météo Tunisie DAGs.
 """
-from shared_logic.analysis.quality import run_quality_checks_fn
-from shared_logic.analysis.monthly import check_data_freshness_fn, compute_monthly_averages_fn
-from shared_logic.analysis.peaks import detect_peaks_fn
-from shared_logic.analysis.correlations import check_min_data_fn, compute_correlations_fn
-from shared_logic.analysis.annual import compute_annual_stats_fn
+from .quality import run_quality_checks_fn
+from .monthly import check_data_freshness_fn, compute_monthly_averages_fn
+from .peaks import detect_peaks_fn
+from .correlations import check_min_data_fn, compute_correlations_fn
+from .annual import compute_annual_stats_fn
 
 __all__ = [
     'run_quality_checks_fn',
